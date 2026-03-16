@@ -1,0 +1,10 @@
+<%- include('../partials/header') %>
+<section class="card auth-card">
+  <h2>Welcome back</h2>
+  <form method="POST" action="/auth/login" class="form-grid">
+    <label>Email<input type="email" name="email" required /></label>
+    <label>Password<input type="password" name="password" required /></label>
+    <button class="btn" type="submit">Login</button>
+  </form>
+</section>
+<%- include('../partials/footer') %>

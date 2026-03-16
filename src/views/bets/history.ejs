@@ -1,0 +1,36 @@
+<%- include('../partials/header') %>
+<h1>Bet History</h1>
+<section class="card">
+  <% if (!bets.length) { %>
+    <p>No bets recorded yet.</p>
+  <% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th><th>Sport</th><th>Type</th><th>Market</th><th>Odds</th><th>Stake</th><th>Result</th><th>P/L</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% bets.forEach(bet => { %>
+        <tr>
+          <td><%= new Date(bet.bet_date).toISOString().slice(0,10) %></td>
+          <td><%= bet.sport %></td>
+          <td><%= bet.bet_type %></td>
+          <td><%= bet.market %></td>
+          <td><%= bet.odds %></td>
+          <td>$<%= Number(bet.stake).toFixed(2) %></td>
+          <td><%= bet.result %></td>
+          <td class="<%= bet.profit_loss >= 0 ? 'positive' : 'negative' %>">$<%= Number(bet.profit_loss).toFixed(2) %></td>
+          <td>
+            <a href="/bets/<%= bet.id %>/edit">Edit</a>
+            <form method="POST" action="/bets/<%= bet.id %>/delete" class="inline-form" onsubmit="return confirm('Delete this bet?');">
+              <button type="submit" class="link-btn danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</section>
+<%- include('../partials/footer') %>

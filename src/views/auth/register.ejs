@@ -1,0 +1,11 @@
+<%- include('../partials/header') %>
+<section class="card auth-card">
+  <h2>Create your account</h2>
+  <form method="POST" action="/auth/register" class="form-grid">
+    <label>Name<input type="text" name="name" required /></label>
+    <label>Email<input type="email" name="email" required /></label>
+    <label>Password<input type="password" name="password" required minlength="6" /></label>
+    <button class="btn" type="submit">Register</button>
+  </form>
+</section>
+<%- include('../partials/footer') %>

@@ -1,0 +1,23 @@
+<%- include('../partials/header') %>
+<section class="card">
+  <h1>Add Bet</h1>
+  <form method="POST" action="/bets/new" class="form-grid two-col">
+    <label>Sport<input type="text" name="sport" required /></label>
+    <label>Bet Type<input type="text" name="betType" required placeholder="Spread, Total, Moneyline" /></label>
+    <label class="full">Market<input type="text" name="market" required placeholder="Lakers -4.5" /></label>
+    <label>Odds<input type="number" step="1" name="odds" required placeholder="-110 or 150" /></label>
+    <label>Stake ($)<input type="number" step="0.01" min="0" name="stake" required /></label>
+    <label>Result
+      <select name="result" required>
+        <option value="">Select</option>
+        <option value="win">Win</option>
+        <option value="loss">Loss</option>
+        <option value="push">Push</option>
+      </select>
+    </label>
+    <label>Bet Date<input type="date" name="betDate" required /></label>
+    <label class="full">Notes<textarea name="notes" rows="3"></textarea></label>
+    <button class="btn full" type="submit">Save Bet</button>
+  </form>
+</section>
+<%- include('../partials/footer') %>

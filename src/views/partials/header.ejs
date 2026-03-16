@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/public/css/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a href="/" class="logo">Bankroll IQ</a>
+      <nav>
+        <% if (user) { %>
+          <a href="/dashboard">Dashboard</a>
+          <a href="/bets/new">Add Bet</a>
+          <a href="/bets/history">History</a>
+          <a href="/stats">Stats</a>
+          <form action="/auth/logout" method="POST" class="inline-form">
+            <button type="submit" class="link-btn">Logout</button>
+          </form>
+        <% } else { %>
+          <a href="/auth/login">Login</a>
+          <a href="/auth/register" class="btn btn-small">Get Started</a>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+
+  <% if (messages.length) { %>
+    <div class="container flash-wrap">
+      <% messages.forEach(message => { %>
+        <div class="flash <%= message.type %>"><%= message.text %></div>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <main class="container">

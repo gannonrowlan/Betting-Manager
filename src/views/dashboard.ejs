@@ -1,0 +1,33 @@
+<%- include('partials/header') %>
+<h1>Dashboard</h1>
+<section class="stats-grid">
+  <div class="card"><h3>Total Bets</h3><p><%= stats.totalBets %></p></div>
+  <div class="card"><h3>Win Rate</h3><p><%= stats.winRate %>%</p></div>
+  <div class="card"><h3>ROI</h3><p><%= stats.roi %>%</p></div>
+  <div class="card"><h3>Net Profit</h3><p class="<%= stats.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= stats.netProfit.toFixed(2) %></p></div>
+</section>
+
+<section class="card">
+  <h2>Recent Bets</h2>
+  <% if (!recentBets.length) { %>
+    <p>No bets yet. <a href="/bets/new">Add your first bet.</a></p>
+  <% } else { %>
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Sport</th><th>Market</th><th>Result</th><th>P/L</th></tr>
+      </thead>
+      <tbody>
+        <% recentBets.forEach(bet => { %>
+          <tr>
+            <td><%= new Date(bet.bet_date).toISOString().slice(0,10) %></td>
+            <td><%= bet.sport %></td>
+            <td><%= bet.market %></td>
+            <td><%= bet.result %></td>
+            <td class="<%= bet.profit_loss >= 0 ? 'positive' : 'negative' %>">$<%= Number(bet.profit_loss).toFixed(2) %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</section>
+<%- include('partials/footer') %>

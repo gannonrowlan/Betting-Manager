@@ -1,0 +1,22 @@
+<%- include('../partials/header') %>
+<section class="card">
+  <h1>Edit Bet</h1>
+  <form method="POST" action="/bets/<%= bet.id %>/edit" class="form-grid two-col">
+    <label>Sport<input type="text" name="sport" value="<%= bet.sport %>" required /></label>
+    <label>Bet Type<input type="text" name="betType" value="<%= bet.bet_type %>" required /></label>
+    <label class="full">Market<input type="text" name="market" value="<%= bet.market %>" required /></label>
+    <label>Odds<input type="number" step="1" name="odds" value="<%= bet.odds %>" required /></label>
+    <label>Stake<input type="number" step="0.01" name="stake" value="<%= bet.stake %>" required /></label>
+    <label>Result
+      <select name="result" required>
+        <option value="win" <%= bet.result === 'win' ? 'selected' : '' %>>Win</option>
+        <option value="loss" <%= bet.result === 'loss' ? 'selected' : '' %>>Loss</option>
+        <option value="push" <%= bet.result === 'push' ? 'selected' : '' %>>Push</option>
+      </select>
+    </label>
+    <label>Bet Date<input type="date" name="betDate" value="<%= new Date(bet.bet_date).toISOString().slice(0,10) %>" required /></label>
+    <label class="full">Notes<textarea name="notes" rows="3"><%= bet.notes || '' %></textarea></label>
+    <button class="btn full" type="submit">Update Bet</button>
+  </form>
+</section>
+<%- include('../partials/footer') %>
