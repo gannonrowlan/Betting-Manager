@@ -47,8 +47,83 @@ async function createBet(req, res) {
 
 async function renderHistory(req, res) {
   const userId = req.session.user.id;
-  const [bets] = await pool.query('SELECT * FROM bets WHERE user_id = ? ORDER BY bet_date DESC, created_at DESC', [userId]);
-  return res.render('bets/history', { title: 'Bet History', bets });
+  const { sport = '', result = '', startDate = '', endDate = '' } = req.query;
+
+  const filters = {
+    sport: sport.trim(),
+    result: result.trim(),
+    startDate: startDate.trim(),
+    endDate: endDate.trim(),
+  };
+
+  let historyQuery = 'SELECT * FROM bets WHERE user_id = ?';
+  const queryParams = [userId];
+
+  if (filters.sport) {
+    historyQuery += ' AND sport = ?';
+    queryParams.push(filters.sport);
+  }
+
+  if (filters.result) {
+    historyQuery += ' AND result = ?';
+    queryParams.push(filters.result);
+  }
+
+  if (filters.startDate) {
+    historyQuery += ' AND bet_date >= ?';
+    queryParams.push(filters.startDate);
+  }
+
+  if (filters.endDate) {
+    historyQuery += ' AND bet_date <= ?';
+    queryParams.push(filters.endDate);
+  }
+
+  historyQuery += ' ORDER BY bet_date DESC, created_at DESC';
+
+  const [bets] = await pool.query(historyQuery, queryParams);
+  const [sports] = await pool.query(
+    'SELECT DISTINCT sport FROM bets WHERE user_id = ? ORDER BY sport ASC',
+    [userId]
+  );
+
+  const summary = bets.reduce(
+    (accumulator, bet) => {
+      const stake = Number(bet.stake || 0);
+      const profitLoss = Number(bet.profit_loss || 0);
+      const nextWins = bet.result === 'win' ? accumulator.wins + 1 : accumulator.wins;
+
+      return {
+        totalBets: accumulator.totalBets + 1,
+        totalStake: accumulator.totalStake + stake,
+        netProfit: accumulator.netProfit + profitLoss,
+        wins: nextWins,
+      };
+    },
+    {
+      totalBets: 0,
+      totalStake: 0,
+      netProfit: 0,
+      wins: 0,
+    }
+  );
+
+  const winRate = summary.totalBets ? ((summary.wins / summary.totalBets) * 100).toFixed(1) : '0.0';
+  const roi = summary.totalStake ? ((summary.netProfit / summary.totalStake) * 100).toFixed(1) : '0.0';
+
+  return res.render('bets/history', {
+    title: 'Bet History',
+    bets,
+    sports: sports.map((row) => row.sport),
+    filters,
+    summary: {
+      ...summary,
+      totalStake: summary.totalStake.toFixed(2),
+      netProfit: summary.netProfit.toFixed(2),
+      winRate,
+      roi,
+    },
+  });
 }
 
 async function renderEditBet(req, res) {

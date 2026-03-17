@@ -1,8 +1,67 @@
 <%- include('../partials/header') %>
 <h1>Bet History</h1>
+
+<section class="card">
+  <form method="GET" action="/bets/history" class="form-grid two-col">
+    <label>
+      Sport
+      <select name="sport">
+        <option value="">All Sports</option>
+        <% sports.forEach((sportOption) => { %>
+          <option value="<%= sportOption %>" <%= filters.sport === sportOption ? 'selected' : '' %>><%= sportOption %></option>
+        <% }) %>
+      </select>
+    </label>
+
+    <label>
+      Result
+      <select name="result">
+        <option value="">All Results</option>
+        <option value="win" <%= filters.result === 'win' ? 'selected' : '' %>>Win</option>
+        <option value="loss" <%= filters.result === 'loss' ? 'selected' : '' %>>Loss</option>
+        <option value="push" <%= filters.result === 'push' ? 'selected' : '' %>>Push</option>
+      </select>
+    </label>
+
+    <label>
+      Start Date
+      <input type="date" name="startDate" value="<%= filters.startDate %>">
+    </label>
+
+    <label>
+      End Date
+      <input type="date" name="endDate" value="<%= filters.endDate %>">
+    </label>
+
+    <div class="full">
+      <button type="submit" class="btn btn-small">Apply Filters</button>
+      <a href="/bets/history" class="btn btn-secondary btn-small">Reset</a>
+    </div>
+  </form>
+</section>
+
+<section class="stats-grid">
+  <article class="card">
+    <h3>Total Bets</h3>
+    <p><strong><%= summary.totalBets %></strong></p>
+  </article>
+  <article class="card">
+    <h3>Net Profit</h3>
+    <p class="<%= Number(summary.netProfit) >= 0 ? 'positive' : 'negative' %>"><strong>$<%= summary.netProfit %></strong></p>
+  </article>
+  <article class="card">
+    <h3>ROI</h3>
+    <p><strong><%= summary.roi %>%</strong></p>
+  </article>
+  <article class="card">
+    <h3>Win Rate</h3>
+    <p><strong><%= summary.winRate %>%</strong></p>
+  </article>
+</section>
+
 <section class="card">
   <% if (!bets.length) { %>
-    <p>No bets recorded yet.</p>
+    <p>No bets found for this filter selection.</p>
   <% } else { %>
   <table>
     <thead>
