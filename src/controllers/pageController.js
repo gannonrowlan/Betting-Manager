@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { calculateRoi, calculateWinRate } = require('../services/statsService');
+const { getOrCreateProfile, updateProfile } = require('../services/profileService');
 
 function renderLanding(req, res) {
   if (req.session.user) {
@@ -38,6 +39,12 @@ async function renderDashboard(req, res) {
   const netProfit = Number(summary.netProfit || 0);
   const roi = calculateRoi({ netProfit, totalStake });
 
+  const profile = await getOrCreateProfile(userId);
+  const currentBankroll = profile.startingBankroll + netProfit;
+  const bankrollRoi = profile.startingBankroll
+    ? ((netProfit / profile.startingBankroll) * 100).toFixed(1)
+    : '0.0';
+
   let performanceMessage = 'Start logging bets to unlock your performance insights.';
   if (totalBets > 0) {
     if (netProfit > 0) {
@@ -60,10 +67,48 @@ async function renderDashboard(req, res) {
       netProfit,
       winRate,
       roi,
+      startingBankroll: profile.startingBankroll,
+      currentBankroll,
+      unitSize: profile.unitSize,
+      bankrollRoi,
     },
     recentBets,
     performanceMessage,
   });
+}
+
+async function renderBankrollSettings(req, res) {
+  const userId = req.session.user.id;
+  const profile = await getOrCreateProfile(userId);
+
+  return res.render('settings/bankroll', {
+    title: 'Bankroll Settings',
+    profile,
+  });
+}
+
+async function updateBankrollSettings(req, res) {
+  const userId = req.session.user.id;
+  const startingBankroll = Number(req.body.startingBankroll);
+  const unitSize = Number(req.body.unitSize);
+
+  if (!Number.isFinite(startingBankroll) || startingBankroll < 0) {
+    req.session.messages = [{ type: 'error', text: 'Starting bankroll must be 0 or greater.' }];
+    return res.redirect('/settings/bankroll');
+  }
+
+  if (!Number.isFinite(unitSize) || unitSize <= 0) {
+    req.session.messages = [{ type: 'error', text: 'Unit size must be greater than 0.' }];
+    return res.redirect('/settings/bankroll');
+  }
+
+  await updateProfile(userId, {
+    startingBankroll: startingBankroll.toFixed(2),
+    unitSize: unitSize.toFixed(2),
+  });
+
+  req.session.messages = [{ type: 'success', text: 'Bankroll settings updated.' }];
+  return res.redirect('/settings/bankroll');
 }
 
 async function renderStats(req, res) {
@@ -107,4 +152,6 @@ module.exports = {
   renderLanding,
   renderDashboard,
   renderStats,
+  renderBankrollSettings,
+  updateBankrollSettings,
 };

@@ -1,6 +1,20 @@
 const pool = require('../config/db');
 const { calculateRoi, calculateWinRate } = require('../services/statsService');
 
+
+function toCsvCell(value) {
+  const safeValue = value == null ? '' : String(value);
+  return `"${safeValue.replace(/"/g, '""')}"`;
+}
+
+function formatDateForCsv(rawDate) {
+  if (!rawDate) {
+    return '';
+  }
+
+  return new Date(rawDate).toISOString().slice(0, 10);
+}
+
 function renderAddBet(req, res) {
   return res.render('bets/add', { title: 'Add Bet' });
 }
@@ -185,11 +199,44 @@ async function deleteBet(req, res) {
   return res.redirect('/bets/history');
 }
 
+
+async function exportHistoryCsv(req, res) {
+  const userId = req.session.user.id;
+  const [bets] = await pool.query(
+    `SELECT bet_date, sport, bet_type, market, odds, stake, result, profit_loss, notes
+      FROM bets
+      WHERE user_id = ?
+      ORDER BY bet_date DESC, created_at DESC`,
+    [userId]
+  );
+
+  const headers = ['Bet Date', 'Sport', 'Bet Type', 'Market', 'Odds', 'Stake', 'Result', 'Profit/Loss', 'Notes'];
+  const rows = bets.map((bet) => [
+    formatDateForCsv(bet.bet_date),
+    bet.sport,
+    bet.bet_type,
+    bet.market,
+    bet.odds,
+    Number(bet.stake || 0).toFixed(2),
+    bet.result,
+    Number(bet.profit_loss || 0).toFixed(2),
+    bet.notes || '',
+  ]);
+
+  const csvLines = [headers, ...rows].map((row) => row.map(toCsvCell).join(','));
+  const csvContent = csvLines.join('\n');
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="bet-history.csv"');
+  return res.status(200).send(csvContent);
+}
+
 module.exports = {
   renderAddBet,
   createBet,
   renderHistory,
   renderEditBet,
+  exportHistoryCsv,
   updateBet,
   deleteBet,
 };

@@ -1,5 +1,5 @@
 <%- include('../partials/header') %>
-<h1>Bet History</h1>
+<div class="page-title-row"><h1>Bet History</h1><a href="/bets/history/export" class="btn btn-small">Export CSV</a></div>
 
 <section class="card">
   <form method="GET" action="/bets/history" class="form-grid two-col">
@@ -48,6 +48,10 @@
   <article class="card">
     <h3>Net Profit</h3>
     <p class="<%= Number(summary.netProfit) >= 0 ? 'positive' : 'negative' %>"><strong>$<%= summary.netProfit %></strong></p>
+  </article>
+  <article class="card">
+    <h3>Total Stake</h3>
+    <p><strong>$<%= summary.totalStake %></strong></p>
   </article>
   <article class="card">
     <h3>ROI</h3>

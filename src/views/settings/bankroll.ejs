@@ -1,0 +1,20 @@
+<%- include('../partials/header') %>
+<section class="card">
+  <h1>Bankroll Settings</h1>
+  <p class="muted">Set your baseline so ROI and bankroll growth are measured against a real target.</p>
+
+  <form method="POST" action="/settings/bankroll" class="form-grid two-col">
+    <label>
+      Starting Bankroll ($)
+      <input type="number" step="0.01" min="0" name="startingBankroll" value="<%= profile.startingBankroll.toFixed(2) %>" required />
+    </label>
+
+    <label>
+      Unit Size ($)
+      <input type="number" step="0.01" min="0.01" name="unitSize" value="<%= profile.unitSize.toFixed(2) %>" required />
+    </label>
+
+    <button class="btn full" type="submit">Save Settings</button>
+  </form>
+</section>
+<%- include('../partials/footer') %>

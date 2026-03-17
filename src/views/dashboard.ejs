@@ -16,6 +16,10 @@
   <div class="card stat-card"><h3>ROI</h3><p><%= stats.roi %>%</p></div>
   <div class="card stat-card"><h3>Total Stake</h3><p>$<%= stats.totalStake.toFixed(2) %></p></div>
   <div class="card stat-card"><h3>Net Profit</h3><p class="<%= stats.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= stats.netProfit.toFixed(2) %></p></div>
+  <div class="card stat-card"><h3>Starting Bankroll</h3><p>$<%= stats.startingBankroll.toFixed(2) %></p></div>
+  <div class="card stat-card"><h3>Current Bankroll</h3><p class="<%= stats.currentBankroll >= stats.startingBankroll ? 'positive' : 'negative' %>">$<%= stats.currentBankroll.toFixed(2) %></p></div>
+  <div class="card stat-card"><h3>Bankroll Growth</h3><p><%= stats.bankrollRoi %>%</p></div>
+  <div class="card stat-card"><h3>Unit Size</h3><p>$<%= stats.unitSize.toFixed(2) %></p></div>
 </section>
 
 <section class="card">
