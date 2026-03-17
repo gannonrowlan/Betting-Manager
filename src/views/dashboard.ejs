@@ -2,8 +2,10 @@
 <h1>Dashboard</h1>
 <section class="stats-grid">
   <div class="card"><h3>Total Bets</h3><p><%= stats.totalBets %></p></div>
+  <div class="card"><h3>Record</h3><p><%= stats.wins %>-<%= stats.losses %>-<%= stats.pushes %></p></div>
   <div class="card"><h3>Win Rate</h3><p><%= stats.winRate %>%</p></div>
   <div class="card"><h3>ROI</h3><p><%= stats.roi %>%</p></div>
+  <div class="card"><h3>Total Stake</h3><p>$<%= stats.totalStake.toFixed(2) %></p></div>
   <div class="card"><h3>Net Profit</h3><p class="<%= stats.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= stats.netProfit.toFixed(2) %></p></div>
 </section>
 

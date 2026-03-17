@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { calculateRoi, calculateWinRate } = require('../services/statsService');
 
 function renderLanding(req, res) {
   if (req.session.user) {
@@ -29,18 +30,21 @@ async function renderDashboard(req, res) {
   );
 
   const totalBets = summary.totalBets || 0;
-  const wins = summary.wins || 0;
-  const winRate = totalBets ? ((wins / totalBets) * 100).toFixed(1) : '0.0';
+  const wins = Number(summary.wins || 0);
+  const losses = Number(summary.losses || 0);
+  const pushes = totalBets - wins - losses;
+  const winRate = calculateWinRate({ wins, losses });
   const totalStake = Number(summary.totalStake || 0);
   const netProfit = Number(summary.netProfit || 0);
-  const roi = totalStake ? ((netProfit / totalStake) * 100).toFixed(1) : '0.0';
+  const roi = calculateRoi({ netProfit, totalStake });
 
   return res.render('dashboard', {
     title: 'Dashboard',
     stats: {
       totalBets,
       wins,
-      losses: summary.losses || 0,
+      losses,
+      pushes,
       totalStake,
       netProfit,
       winRate,
@@ -59,7 +63,8 @@ async function renderStats(req, res) {
       COUNT(*) AS totalBets,
       ROUND(SUM(stake), 2) AS totalStake,
       ROUND(SUM(profit_loss), 2) AS netProfit,
-      SUM(CASE WHEN result = 'win' THEN 1 ELSE 0 END) AS wins
+      SUM(CASE WHEN result = 'win' THEN 1 ELSE 0 END) AS wins,
+      SUM(CASE WHEN result = 'loss' THEN 1 ELSE 0 END) AS losses
     FROM bets
     WHERE user_id = ?
     GROUP BY sport

@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { calculateRoi, calculateWinRate } = require('../services/statsService');
 
 function renderAddBet(req, res) {
   return res.render('bets/add', { title: 'Add Bet' });
@@ -92,12 +93,14 @@ async function renderHistory(req, res) {
       const stake = Number(bet.stake || 0);
       const profitLoss = Number(bet.profit_loss || 0);
       const nextWins = bet.result === 'win' ? accumulator.wins + 1 : accumulator.wins;
+      const nextLosses = bet.result === 'loss' ? accumulator.losses + 1 : accumulator.losses;
 
       return {
         totalBets: accumulator.totalBets + 1,
         totalStake: accumulator.totalStake + stake,
         netProfit: accumulator.netProfit + profitLoss,
         wins: nextWins,
+        losses: nextLosses,
       };
     },
     {
@@ -105,11 +108,12 @@ async function renderHistory(req, res) {
       totalStake: 0,
       netProfit: 0,
       wins: 0,
+      losses: 0,
     }
   );
 
-  const winRate = summary.totalBets ? ((summary.wins / summary.totalBets) * 100).toFixed(1) : '0.0';
-  const roi = summary.totalStake ? ((summary.netProfit / summary.totalStake) * 100).toFixed(1) : '0.0';
+  const winRate = calculateWinRate({ wins: summary.wins, losses: summary.losses });
+  const roi = calculateRoi({ netProfit: summary.netProfit, totalStake: summary.totalStake });
 
   return res.render('bets/history', {
     title: 'Bet History',

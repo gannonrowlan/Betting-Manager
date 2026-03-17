@@ -3,34 +3,47 @@
 <section class="stats-grid two-up">
   <article class="card">
     <h2>By Sport</h2>
-    <table>
-      <thead><tr><th>Sport</th><th>Bets</th><th>Win %</th><th>Net</th></tr></thead>
-      <tbody>
-      <% sportStats.forEach(row => { const wr = row.totalBets ? ((row.wins / row.totalBets) * 100).toFixed(1) : '0.0'; %>
-        <tr>
-          <td><%= row.sport %></td>
-          <td><%= row.totalBets %></td>
-          <td><%= wr %>%</td>
-          <td class="<%= row.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(row.netProfit).toFixed(2) %></td>
-        </tr>
-      <% }) %>
-      </tbody>
-    </table>
+    <% if (!sportStats.length) { %>
+      <p>No sport stats yet. Add bets to start tracking performance.</p>
+    <% } else { %>
+      <table>
+        <thead><tr><th>Sport</th><th>Bets</th><th>Win %</th><th>ROI</th><th>Net</th></tr></thead>
+        <tbody>
+        <% sportStats.forEach(row => { 
+          const decisions = Number(row.wins || 0) + Number(row.losses || 0);
+          const wr = decisions ? ((Number(row.wins || 0) / decisions) * 100).toFixed(1) : '0.0';
+          const roi = Number(row.totalStake) ? ((Number(row.netProfit) / Number(row.totalStake)) * 100).toFixed(1) : '0.0';
+        %>
+          <tr>
+            <td><%= row.sport %></td>
+            <td><%= row.totalBets %></td>
+            <td><%= wr %>%</td>
+            <td><%= roi %>%</td>
+            <td class="<%= row.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(row.netProfit).toFixed(2) %></td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+    <% } %>
   </article>
   <article class="card">
     <h2>By Bet Type</h2>
-    <table>
-      <thead><tr><th>Type</th><th>Bets</th><th>Net</th></tr></thead>
-      <tbody>
-      <% betTypeStats.forEach(row => { %>
-        <tr>
-          <td><%= row.betType %></td>
-          <td><%= row.totalBets %></td>
-          <td class="<%= row.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(row.netProfit).toFixed(2) %></td>
-        </tr>
-      <% }) %>
-      </tbody>
-    </table>
+    <% if (!betTypeStats.length) { %>
+      <p>No bet type stats yet. Add bets to populate this breakdown.</p>
+    <% } else { %>
+      <table>
+        <thead><tr><th>Type</th><th>Bets</th><th>Net</th></tr></thead>
+        <tbody>
+        <% betTypeStats.forEach(row => { %>
+          <tr>
+            <td><%= row.betType %></td>
+            <td><%= row.totalBets %></td>
+            <td class="<%= row.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(row.netProfit).toFixed(2) %></td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+    <% } %>
   </article>
 </section>
 <%- include('partials/footer') %>
