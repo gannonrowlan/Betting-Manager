@@ -2,18 +2,39 @@ const bcrypt = require('bcrypt');
 const pool = require('../config/db');
 
 function renderRegister(req, res) {
-  return res.render('auth/register', { title: 'Register' });
+  const formData = req.session.formData || {};
+  req.session.formData = null;
+
+  return res.render('auth/register', { title: 'Register', formData });
 }
 
 function renderLogin(req, res) {
-  return res.render('auth/login', { title: 'Login' });
+  const formData = req.session.formData || {};
+  req.session.formData = null;
+
+  return res.render('auth/login', { title: 'Login', formData });
 }
 
 async function register(req, res) {
-  const { name, email, password } = req.body;
+  const name = (req.body.name || '').trim();
+  const email = (req.body.email || '').trim().toLowerCase();
+  const password = req.body.password || '';
+  const confirmPassword = req.body.confirmPassword || '';
+
+  req.session.formData = { name, email };
 
   if (!name || !email || !password) {
     req.session.messages = [{ type: 'error', text: 'All fields are required.' }];
+    return res.redirect('/auth/register');
+  }
+
+  if (password.length < 8) {
+    req.session.messages = [{ type: 'error', text: 'Password must be at least 8 characters.' }];
+    return res.redirect('/auth/register');
+  }
+
+  if (password !== confirmPassword) {
+    req.session.messages = [{ type: 'error', text: 'Passwords do not match.' }];
     return res.redirect('/auth/register');
   }
 
@@ -31,6 +52,7 @@ async function register(req, res) {
     );
 
     req.session.user = { id: result.insertId, name, email };
+    req.session.formData = null;
     req.session.messages = [{ type: 'success', text: 'Account created successfully.' }];
     return res.redirect('/dashboard');
   } catch (error) {
@@ -40,7 +62,10 @@ async function register(req, res) {
 }
 
 async function login(req, res) {
-  const { email, password } = req.body;
+  const email = (req.body.email || '').trim().toLowerCase();
+  const password = req.body.password || '';
+
+  req.session.formData = { email };
 
   if (!email || !password) {
     req.session.messages = [{ type: 'error', text: 'Email and password are required.' }];
@@ -64,6 +89,7 @@ async function login(req, res) {
     }
 
     req.session.user = { id: user.id, name: user.name, email: user.email };
+    req.session.formData = null;
     req.session.messages = [{ type: 'success', text: 'Welcome back!' }];
     return res.redirect('/dashboard');
   } catch (error) {

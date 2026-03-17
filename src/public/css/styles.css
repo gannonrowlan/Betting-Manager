@@ -29,3 +29,19 @@ th, td { text-align: left; padding: 0.6rem; border-bottom: 1px solid #e2e8f0; }
 @media (max-width: 700px) {
   .two-up, .form-grid.two-col { grid-template-columns: 1fr; }
 }
+
+.auth-card { max-width: 520px; margin: 2rem auto; }
+.muted { color: #475569; margin-top: 0; }
+.auth-switch { margin-bottom: 0; color: #334155; }
+.auth-switch a { color: #1d4ed8; text-decoration: none; }
+.eyebrow { text-transform: uppercase; letter-spacing: .08em; color: #1d4ed8; font-weight: 600; margin: 0; }
+.hero p { color: #334155; }
+.hero-actions { display: flex; gap: 0.75rem; margin: 1.25rem 0; }
+.hero-points { margin: 0; padding-left: 1.25rem; color: #334155; display: grid; gap: 0.35rem; }
+.pricing-preview h3 { margin-top: 0; }
+.pill-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+.pill { background: #e2e8f0; color: #1e293b; border-radius: 999px; padding: 0.35rem 0.7rem; font-size: 0.85rem; }
+
+@media (max-width: 700px) {
+  .hero-actions { flex-direction: column; }
+}

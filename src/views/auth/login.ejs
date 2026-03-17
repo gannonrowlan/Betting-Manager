@@ -1,10 +1,18 @@
 <%- include('../partials/header') %>
 <section class="card auth-card">
   <h2>Welcome back</h2>
-  <form method="POST" action="/auth/login" class="form-grid">
-    <label>Email<input type="email" name="email" required /></label>
-    <label>Password<input type="password" name="password" required /></label>
+  <p class="muted">Log in to review your performance, update your bankroll, and stay disciplined.</p>
+  <form method="POST" action="/auth/login" class="form-grid" autocomplete="on">
+    <label>
+      Email
+      <input type="email" name="email" required autocomplete="email" value="<%= formData?.email || '' %>" />
+    </label>
+    <label>
+      Password
+      <input type="password" name="password" required autocomplete="current-password" />
+    </label>
     <button class="btn" type="submit">Login</button>
   </form>
+  <p class="auth-switch">New to Bankroll IQ? <a href="/auth/register">Create an account</a>.</p>
 </section>
 <%- include('../partials/footer') %>

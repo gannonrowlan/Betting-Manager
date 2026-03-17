@@ -1,11 +1,26 @@
 <%- include('../partials/header') %>
 <section class="card auth-card">
   <h2>Create your account</h2>
-  <form method="POST" action="/auth/register" class="form-grid">
-    <label>Name<input type="text" name="name" required /></label>
-    <label>Email<input type="email" name="email" required /></label>
-    <label>Password<input type="password" name="password" required minlength="6" /></label>
-    <button class="btn" type="submit">Register</button>
+  <p class="muted">Start tracking your bets with the discipline-focused dashboard.</p>
+  <form method="POST" action="/auth/register" class="form-grid" autocomplete="on">
+    <label>
+      Name
+      <input type="text" name="name" required autocomplete="name" value="<%= formData?.name || '' %>" />
+    </label>
+    <label>
+      Email
+      <input type="email" name="email" required autocomplete="email" value="<%= formData?.email || '' %>" />
+    </label>
+    <label>
+      Password
+      <input type="password" name="password" required minlength="8" autocomplete="new-password" />
+    </label>
+    <label>
+      Confirm password
+      <input type="password" name="confirmPassword" required minlength="8" autocomplete="new-password" />
+    </label>
+    <button class="btn" type="submit">Create Account</button>
   </form>
+  <p class="auth-switch">Already have an account? <a href="/auth/login">Login</a>.</p>
 </section>
 <%- include('../partials/footer') %>
