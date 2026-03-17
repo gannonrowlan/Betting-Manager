@@ -1,18 +1,28 @@
 <%- include('partials/header') %>
-<h1>Dashboard</h1>
+<section class="dashboard-hero card">
+  <p class="eyebrow">Performance Snapshot</p>
+  <h1>Dashboard</h1>
+  <p class="muted"><%= performanceMessage %></p>
+  <div class="hero-actions">
+    <a href="/bets/new" class="btn">Log a new bet</a>
+    <a href="/bets/history" class="btn btn-secondary">Review bet history</a>
+  </div>
+</section>
+
 <section class="stats-grid">
-  <div class="card"><h3>Total Bets</h3><p><%= stats.totalBets %></p></div>
-  <div class="card"><h3>Record</h3><p><%= stats.wins %>-<%= stats.losses %>-<%= stats.pushes %></p></div>
-  <div class="card"><h3>Win Rate</h3><p><%= stats.winRate %>%</p></div>
-  <div class="card"><h3>ROI</h3><p><%= stats.roi %>%</p></div>
-  <div class="card"><h3>Total Stake</h3><p>$<%= stats.totalStake.toFixed(2) %></p></div>
-  <div class="card"><h3>Net Profit</h3><p class="<%= stats.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= stats.netProfit.toFixed(2) %></p></div>
+  <div class="card stat-card"><h3>Total Bets</h3><p><%= stats.totalBets %></p></div>
+  <div class="card stat-card"><h3>Record</h3><p><%= stats.wins %>-<%= stats.losses %>-<%= stats.pushes %></p></div>
+  <div class="card stat-card"><h3>Win Rate</h3><p><%= stats.winRate %>%</p></div>
+  <div class="card stat-card"><h3>ROI</h3><p><%= stats.roi %>%</p></div>
+  <div class="card stat-card"><h3>Total Stake</h3><p>$<%= stats.totalStake.toFixed(2) %></p></div>
+  <div class="card stat-card"><h3>Net Profit</h3><p class="<%= stats.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= stats.netProfit.toFixed(2) %></p></div>
 </section>
 
 <section class="card">
   <h2>Recent Bets</h2>
   <% if (!recentBets.length) { %>
-    <p>No bets yet. <a href="/bets/new">Add your first bet.</a></p>
+    <p class="muted">No bets yet. Start your dataset by adding your first wager.</p>
+    <a href="/bets/new" class="btn">Add your first bet</a>
   <% } else { %>
     <table>
       <thead>

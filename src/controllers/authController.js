@@ -1,15 +1,27 @@
 const bcrypt = require('bcrypt');
 const pool = require('../config/db');
 
+const REMEMBER_ME_MAX_AGE = 1000 * 60 * 60 * 24 * 30;
+
+function setSessionLifetime(req, rememberMe) {
+  if (rememberMe) {
+    req.session.cookie.maxAge = REMEMBER_ME_MAX_AGE;
+    return;
+  }
+
+  req.session.cookie.expires = false;
+  req.session.cookie.maxAge = null;
+}
+
 function renderRegister(req, res) {
-  const formData = req.session.formData || {};
+  const formData = req.session.formData || { rememberMe: true };
   req.session.formData = null;
 
   return res.render('auth/register', { title: 'Register', formData });
 }
 
 function renderLogin(req, res) {
-  const formData = req.session.formData || {};
+  const formData = req.session.formData || { rememberMe: true };
   req.session.formData = null;
 
   return res.render('auth/login', { title: 'Login', formData });
@@ -20,8 +32,9 @@ async function register(req, res) {
   const email = (req.body.email || '').trim().toLowerCase();
   const password = req.body.password || '';
   const confirmPassword = req.body.confirmPassword || '';
+  const rememberMe = req.body.rememberMe === 'on';
 
-  req.session.formData = { name, email };
+  req.session.formData = { name, email, rememberMe };
 
   if (!name || !email || !password) {
     req.session.messages = [{ type: 'error', text: 'All fields are required.' }];
@@ -52,6 +65,7 @@ async function register(req, res) {
     );
 
     req.session.user = { id: result.insertId, name, email };
+    setSessionLifetime(req, rememberMe);
     req.session.formData = null;
     req.session.messages = [{ type: 'success', text: 'Account created successfully.' }];
     return res.redirect('/dashboard');
@@ -64,8 +78,9 @@ async function register(req, res) {
 async function login(req, res) {
   const email = (req.body.email || '').trim().toLowerCase();
   const password = req.body.password || '';
+  const rememberMe = req.body.rememberMe === 'on';
 
-  req.session.formData = { email };
+  req.session.formData = { email, rememberMe };
 
   if (!email || !password) {
     req.session.messages = [{ type: 'error', text: 'Email and password are required.' }];
@@ -89,6 +104,7 @@ async function login(req, res) {
     }
 
     req.session.user = { id: user.id, name: user.name, email: user.email };
+    setSessionLifetime(req, rememberMe);
     req.session.formData = null;
     req.session.messages = [{ type: 'success', text: 'Welcome back!' }];
     return res.redirect('/dashboard');

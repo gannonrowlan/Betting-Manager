@@ -13,14 +13,39 @@
     </label>
     <label>
       Password
-      <input type="password" name="password" required minlength="8" autocomplete="new-password" />
+      <div class="password-input-wrap">
+        <input id="register-password" type="password" name="password" required minlength="8" autocomplete="new-password" />
+        <button type="button" class="link-btn password-toggle" data-password-toggle="register-password" aria-label="Show password">Show</button>
+      </div>
     </label>
     <label>
       Confirm password
-      <input type="password" name="confirmPassword" required minlength="8" autocomplete="new-password" />
+      <div class="password-input-wrap">
+        <input id="register-confirm-password" type="password" name="confirmPassword" required minlength="8" autocomplete="new-password" />
+        <button type="button" class="link-btn password-toggle" data-password-toggle="register-confirm-password" aria-label="Show password">Show</button>
+      </div>
+    </label>
+    <label class="checkbox-label">
+      <input type="checkbox" name="rememberMe" <%= formData?.rememberMe !== false ? 'checked' : '' %> />
+      Keep me signed in for 30 days
     </label>
     <button class="btn" type="submit">Create Account</button>
   </form>
   <p class="auth-switch">Already have an account? <a href="/auth/login">Login</a>.</p>
 </section>
+<script>
+  document.querySelectorAll('[data-password-toggle]').forEach((button) => {
+    const inputId = button.getAttribute('data-password-toggle');
+    const input = document.getElementById(inputId);
+
+    if (!input) return;
+
+    button.addEventListener('click', () => {
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      button.textContent = isPassword ? 'Hide' : 'Show';
+      button.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+    });
+  });
+</script>
 <%- include('../partials/footer') %>

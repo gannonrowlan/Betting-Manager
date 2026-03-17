@@ -9,10 +9,32 @@
     </label>
     <label>
       Password
-      <input type="password" name="password" required autocomplete="current-password" />
+      <div class="password-input-wrap">
+        <input id="login-password" type="password" name="password" required autocomplete="current-password" />
+        <button type="button" class="link-btn password-toggle" data-password-toggle="login-password" aria-label="Show password">Show</button>
+      </div>
+    </label>
+    <label class="checkbox-label">
+      <input type="checkbox" name="rememberMe" <%= formData?.rememberMe !== false ? 'checked' : '' %> />
+      Remember me for 30 days
     </label>
     <button class="btn" type="submit">Login</button>
   </form>
   <p class="auth-switch">New to Bankroll IQ? <a href="/auth/register">Create an account</a>.</p>
 </section>
+<script>
+  document.querySelectorAll('[data-password-toggle]').forEach((button) => {
+    const inputId = button.getAttribute('data-password-toggle');
+    const input = document.getElementById(inputId);
+
+    if (!input) return;
+
+    button.addEventListener('click', () => {
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      button.textContent = isPassword ? 'Hide' : 'Show';
+      button.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+    });
+  });
+</script>
 <%- include('../partials/footer') %>

@@ -38,6 +38,17 @@ async function renderDashboard(req, res) {
   const netProfit = Number(summary.netProfit || 0);
   const roi = calculateRoi({ netProfit, totalStake });
 
+  let performanceMessage = 'Start logging bets to unlock your performance insights.';
+  if (totalBets > 0) {
+    if (netProfit > 0) {
+      performanceMessage = `Great work — you are up $${netProfit.toFixed(2)} with a ${roi}% ROI.`;
+    } else if (netProfit < 0) {
+      performanceMessage = `You are down $${Math.abs(netProfit).toFixed(2)}. Review recent bets and tighten your unit sizing.`;
+    } else {
+      performanceMessage = 'You are break-even right now. Keep tracking for a clearer edge signal.';
+    }
+  }
+
   return res.render('dashboard', {
     title: 'Dashboard',
     stats: {
@@ -51,6 +62,7 @@ async function renderDashboard(req, res) {
       roi,
     },
     recentBets,
+    performanceMessage,
   });
 }
 
