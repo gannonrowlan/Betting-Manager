@@ -9,6 +9,41 @@
   </div>
 </section>
 
+<section class="card">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">Time Window</p>
+      <h2>Filter dashboard performance</h2>
+      <p class="muted">Currently viewing: <strong><%= filterLabel %></strong></p>
+    </div>
+  </div>
+  <form method="GET" action="/dashboard" class="form-grid dashboard-filter-grid">
+    <label>
+      Range
+      <select name="range">
+        <option value="7d" <%= filters.range === '7d' ? 'selected' : '' %>>Last 7 days</option>
+        <option value="30d" <%= filters.range === '30d' ? 'selected' : '' %>>Last 30 days</option>
+        <option value="90d" <%= filters.range === '90d' ? 'selected' : '' %>>Last 90 days</option>
+        <option value="month" <%= filters.range === 'month' ? 'selected' : '' %>>This month</option>
+        <option value="all" <%= filters.range === 'all' ? 'selected' : '' %>>All time</option>
+        <option value="custom" <%= filters.range === 'custom' ? 'selected' : '' %>>Custom range</option>
+      </select>
+    </label>
+    <label>
+      Start Date
+      <input type="date" name="startDate" value="<%= filters.startDateValue %>" <%= filters.isCustom ? '' : 'disabled' %>>
+    </label>
+    <label>
+      End Date
+      <input type="date" name="endDate" value="<%= filters.endDateValue %>" <%= filters.isCustom ? '' : 'disabled' %>>
+    </label>
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-small">Apply</button>
+      <a href="/dashboard" class="btn btn-secondary btn-small">Reset</a>
+    </div>
+  </form>
+</section>
+
 <section class="stats-grid">
   <div class="card stat-card"><h3>Total Bets</h3><p><%= stats.totalBets %></p></div>
   <div class="card stat-card"><h3>Record</h3><p><%= stats.wins %>-<%= stats.losses %>-<%= stats.pushes %></p></div>
@@ -16,16 +51,44 @@
   <div class="card stat-card"><h3>ROI</h3><p><%= stats.roi %>%</p></div>
   <div class="card stat-card"><h3>Total Stake</h3><p>$<%= stats.totalStake.toFixed(2) %></p></div>
   <div class="card stat-card"><h3>Net Profit</h3><p class="<%= stats.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= stats.netProfit.toFixed(2) %></p></div>
+  <div class="card stat-card"><h3>Average Stake</h3><p>$<%= stats.averageStake.toFixed(2) %></p></div>
+  <div class="card stat-card"><h3>Units</h3><p class="<%= Number(stats.units) >= 0 ? 'positive' : 'negative' %>"><%= stats.units %>u</p></div>
+  <div class="card stat-card"><h3>Current Streak</h3><p><%= stats.currentStreak.label %></p></div>
+  <div class="card stat-card"><h3>Best Win</h3><p class="positive">$<%= stats.biggestWin.toFixed(2) %></p></div>
+  <div class="card stat-card"><h3>Worst Loss</h3><p class="negative">$<%= stats.biggestLoss.toFixed(2) %></p></div>
   <div class="card stat-card"><h3>Starting Bankroll</h3><p>$<%= stats.startingBankroll.toFixed(2) %></p></div>
   <div class="card stat-card"><h3>Current Bankroll</h3><p class="<%= stats.currentBankroll >= stats.startingBankroll ? 'positive' : 'negative' %>">$<%= stats.currentBankroll.toFixed(2) %></p></div>
   <div class="card stat-card"><h3>Bankroll Growth</h3><p><%= stats.bankrollRoi %>%</p></div>
   <div class="card stat-card"><h3>Unit Size</h3><p>$<%= stats.unitSize.toFixed(2) %></p></div>
 </section>
 
+<section class="stats-grid two-up insights-grid">
+  <article class="card insight-card">
+    <p class="eyebrow">Best Sport</p>
+    <% if (!highlights.bestSport) { %>
+      <p class="muted">No sport-level trends yet in this window.</p>
+    <% } else { %>
+      <h3><%= highlights.bestSport.key %></h3>
+      <p class="insight-number <%= highlights.bestSport.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(highlights.bestSport.netProfit).toFixed(2) %></p>
+      <p class="muted"><%= highlights.bestSport.totalBets %> bets · <%= highlights.bestSport.roi %>% ROI · <%= highlights.bestSport.units %>u</p>
+    <% } %>
+  </article>
+  <article class="card insight-card">
+    <p class="eyebrow">Toughest Sport</p>
+    <% if (!highlights.toughestSport) { %>
+      <p class="muted">Add more bets to identify trouble spots.</p>
+    <% } else { %>
+      <h3><%= highlights.toughestSport.key %></h3>
+      <p class="insight-number <%= highlights.toughestSport.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(highlights.toughestSport.netProfit).toFixed(2) %></p>
+      <p class="muted"><%= highlights.toughestSport.totalBets %> bets · <%= highlights.toughestSport.roi %>% ROI · <%= highlights.toughestSport.units %>u</p>
+    <% } %>
+  </article>
+</section>
+
 <section class="card">
-  <h2>Recent Bets</h2>
+  <h2>Recent Bets In Window</h2>
   <% if (!recentBets.length) { %>
-    <p class="muted">No bets yet. Start your dataset by adding your first wager.</p>
+    <p class="muted">No bets in this date range. Adjust the filter or add your next wager.</p>
     <a href="/bets/new" class="btn">Add your first bet</a>
   <% } else { %>
     <table>
@@ -46,4 +109,21 @@
     </table>
   <% } %>
 </section>
+
+<script>
+  const rangeSelect = document.querySelector('select[name="range"]');
+  const customDateInputs = document.querySelectorAll('input[name="startDate"], input[name="endDate"]');
+
+  function syncCustomDateState() {
+    const isCustom = rangeSelect.value === 'custom';
+    customDateInputs.forEach((input) => {
+      input.disabled = !isCustom;
+    });
+  }
+
+  if (rangeSelect) {
+    rangeSelect.addEventListener('change', syncCustomDateState);
+    syncCustomDateState();
+  }
+</script>
 <%- include('partials/footer') %>

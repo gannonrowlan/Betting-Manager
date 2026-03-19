@@ -1,6 +1,12 @@
 const pool = require('../config/db');
-const { calculateRoi, calculateWinRate } = require('../services/statsService');
-
+const {
+  calculateProfitLoss,
+  calculateRoi,
+  calculateWinRate,
+  formatDateInput,
+  parseDateInput,
+  summarizeBets,
+} = require('../services/statsService');
 
 function toCsvCell(value) {
   const safeValue = value == null ? '' : String(value);
@@ -30,19 +36,7 @@ async function createBet(req, res) {
 
   const parsedOdds = Number(odds);
   const parsedStake = Number(stake);
-  let profitLoss = 0;
-
-  if (result === 'win') {
-    if (parsedOdds > 0) {
-      profitLoss = (parsedStake * parsedOdds) / 100;
-    } else {
-      profitLoss = (parsedStake * 100) / Math.abs(parsedOdds);
-    }
-  }
-
-  if (result === 'loss') {
-    profitLoss = -parsedStake;
-  }
+  const profitLoss = calculateProfitLoss({ odds: parsedOdds, stake: parsedStake, result });
 
   try {
     await pool.query(
@@ -60,16 +54,24 @@ async function createBet(req, res) {
   }
 }
 
+function buildHistoryFilters(query = {}) {
+  const sport = (query.sport || '').trim();
+  const result = (query.result || '').trim();
+  const startDate = (query.startDate || '').trim();
+  const endDate = (query.endDate || '').trim();
+
+  return {
+    sport,
+    result,
+    startDate,
+    endDate,
+    hasActiveFilters: Boolean(sport || result || startDate || endDate),
+  };
+}
+
 async function renderHistory(req, res) {
   const userId = req.session.user.id;
-  const { sport = '', result = '', startDate = '', endDate = '' } = req.query;
-
-  const filters = {
-    sport: sport.trim(),
-    result: result.trim(),
-    startDate: startDate.trim(),
-    endDate: endDate.trim(),
-  };
+  const filters = buildHistoryFilters(req.query);
 
   let historyQuery = 'SELECT * FROM bets WHERE user_id = ?';
   const queryParams = [userId];
@@ -102,32 +104,7 @@ async function renderHistory(req, res) {
     [userId]
   );
 
-  const summary = bets.reduce(
-    (accumulator, bet) => {
-      const stake = Number(bet.stake || 0);
-      const profitLoss = Number(bet.profit_loss || 0);
-      const nextWins = bet.result === 'win' ? accumulator.wins + 1 : accumulator.wins;
-      const nextLosses = bet.result === 'loss' ? accumulator.losses + 1 : accumulator.losses;
-
-      return {
-        totalBets: accumulator.totalBets + 1,
-        totalStake: accumulator.totalStake + stake,
-        netProfit: accumulator.netProfit + profitLoss,
-        wins: nextWins,
-        losses: nextLosses,
-      };
-    },
-    {
-      totalBets: 0,
-      totalStake: 0,
-      netProfit: 0,
-      wins: 0,
-      losses: 0,
-    }
-  );
-
-  const winRate = calculateWinRate({ wins: summary.wins, losses: summary.losses });
-  const roi = calculateRoi({ netProfit: summary.netProfit, totalStake: summary.totalStake });
+  const summary = summarizeBets(bets);
 
   return res.render('bets/history', {
     title: 'Bet History',
@@ -135,11 +112,15 @@ async function renderHistory(req, res) {
     sports: sports.map((row) => row.sport),
     filters,
     summary: {
-      ...summary,
+      totalBets: summary.totalBets,
       totalStake: summary.totalStake.toFixed(2),
       netProfit: summary.netProfit.toFixed(2),
-      winRate,
-      roi,
+      winRate: calculateWinRate({ wins: summary.wins, losses: summary.losses }),
+      roi: calculateRoi({ netProfit: summary.netProfit, totalStake: summary.totalStake }),
+      wins: summary.wins,
+      losses: summary.losses,
+      pushes: summary.pushes,
+      averageStake: summary.averageStake.toFixed(2),
     },
   });
 }
@@ -164,19 +145,7 @@ async function updateBet(req, res) {
 
   const parsedOdds = Number(odds);
   const parsedStake = Number(stake);
-  let profitLoss = 0;
-
-  if (result === 'win') {
-    if (parsedOdds > 0) {
-      profitLoss = (parsedStake * parsedOdds) / 100;
-    } else {
-      profitLoss = (parsedStake * 100) / Math.abs(parsedOdds);
-    }
-  }
-
-  if (result === 'loss') {
-    profitLoss = -parsedStake;
-  }
+  const profitLoss = calculateProfitLoss({ odds: parsedOdds, stake: parsedStake, result });
 
   await pool.query(
     `UPDATE bets
@@ -199,16 +168,37 @@ async function deleteBet(req, res) {
   return res.redirect('/bets/history');
 }
 
-
 async function exportHistoryCsv(req, res) {
   const userId = req.session.user.id;
-  const [bets] = await pool.query(
-    `SELECT bet_date, sport, bet_type, market, odds, stake, result, profit_loss, notes
+  const filters = buildHistoryFilters(req.query);
+  let exportQuery = `SELECT bet_date, sport, bet_type, market, odds, stake, result, profit_loss, notes
       FROM bets
-      WHERE user_id = ?
-      ORDER BY bet_date DESC, created_at DESC`,
-    [userId]
-  );
+      WHERE user_id = ?`;
+  const queryParams = [userId];
+
+  if (filters.sport) {
+    exportQuery += ' AND sport = ?';
+    queryParams.push(filters.sport);
+  }
+
+  if (filters.result) {
+    exportQuery += ' AND result = ?';
+    queryParams.push(filters.result);
+  }
+
+  if (filters.startDate && parseDateInput(filters.startDate)) {
+    exportQuery += ' AND bet_date >= ?';
+    queryParams.push(formatDateInput(parseDateInput(filters.startDate)));
+  }
+
+  if (filters.endDate && parseDateInput(filters.endDate)) {
+    exportQuery += ' AND bet_date <= ?';
+    queryParams.push(formatDateInput(parseDateInput(filters.endDate)));
+  }
+
+  exportQuery += ' ORDER BY bet_date DESC, created_at DESC';
+
+  const [bets] = await pool.query(exportQuery, queryParams);
 
   const headers = ['Bet Date', 'Sport', 'Bet Type', 'Market', 'Odds', 'Stake', 'Result', 'Profit/Loss', 'Notes'];
   const rows = bets.map((bet) => [

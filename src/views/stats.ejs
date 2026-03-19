@@ -1,24 +1,21 @@
 <%- include('partials/header') %>
-<h1>Basic Stats</h1>
-<section class="stats-grid two-up">
+<h1>Advanced Stats</h1>
+<section class="stats-grid three-up">
   <article class="card">
     <h2>By Sport</h2>
     <% if (!sportStats.length) { %>
       <p>No sport stats yet. Add bets to start tracking performance.</p>
     <% } else { %>
       <table>
-        <thead><tr><th>Sport</th><th>Bets</th><th>Win %</th><th>ROI</th><th>Net</th></tr></thead>
+        <thead><tr><th>Sport</th><th>Bets</th><th>Win %</th><th>ROI</th><th>Units</th><th>Net</th></tr></thead>
         <tbody>
-        <% sportStats.forEach(row => { 
-          const decisions = Number(row.wins || 0) + Number(row.losses || 0);
-          const wr = decisions ? ((Number(row.wins || 0) / decisions) * 100).toFixed(1) : '0.0';
-          const roi = Number(row.totalStake) ? ((Number(row.netProfit) / Number(row.totalStake)) * 100).toFixed(1) : '0.0';
-        %>
+        <% sportStats.forEach(row => { %>
           <tr>
-            <td><%= row.sport %></td>
+            <td><%= row.key %></td>
             <td><%= row.totalBets %></td>
-            <td><%= wr %>%</td>
-            <td><%= roi %>%</td>
+            <td><%= row.winRate %>%</td>
+            <td><%= row.roi %>%</td>
+            <td class="<%= Number(row.units) >= 0 ? 'positive' : 'negative' %>"><%= row.units %>u</td>
             <td class="<%= row.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(row.netProfit).toFixed(2) %></td>
           </tr>
         <% }) %>
@@ -32,12 +29,37 @@
       <p>No bet type stats yet. Add bets to populate this breakdown.</p>
     <% } else { %>
       <table>
-        <thead><tr><th>Type</th><th>Bets</th><th>Net</th></tr></thead>
+        <thead><tr><th>Type</th><th>Bets</th><th>Win %</th><th>ROI</th><th>Units</th><th>Net</th></tr></thead>
         <tbody>
         <% betTypeStats.forEach(row => { %>
           <tr>
             <td><%= row.betType %></td>
             <td><%= row.totalBets %></td>
+            <td><%= row.winRate %>%</td>
+            <td><%= row.roi %>%</td>
+            <td class="<%= Number(row.units) >= 0 ? 'positive' : 'negative' %>"><%= row.units %>u</td>
+            <td class="<%= row.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(row.netProfit).toFixed(2) %></td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </article>
+  <article class="card">
+    <h2>Monthly Recap</h2>
+    <% if (!monthlyRecap.length) { %>
+      <p>No monthly recap yet. Add settled bets to build your trend history.</p>
+    <% } else { %>
+      <table>
+        <thead><tr><th>Month</th><th>Bets</th><th>Win %</th><th>ROI</th><th>Units</th><th>Net</th></tr></thead>
+        <tbody>
+        <% monthlyRecap.forEach(row => { %>
+          <tr>
+            <td><%= row.month %></td>
+            <td><%= row.totalBets %></td>
+            <td><%= row.winRate %>%</td>
+            <td><%= row.roi %>%</td>
+            <td class="<%= Number(row.units) >= 0 ? 'positive' : 'negative' %>"><%= row.units %>u</td>
             <td class="<%= row.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(row.netProfit).toFixed(2) %></td>
           </tr>
         <% }) %>

@@ -1,5 +1,12 @@
 const pool = require('../config/db');
-const { calculateRoi, calculateWinRate } = require('../services/statsService');
+const {
+  buildMonthlyRecap,
+  formatDateInput,
+  getDateRangePreset,
+  groupPerformance,
+  parseDateInput,
+  summarizeBets,
+} = require('../services/statsService');
 const { getOrCreateProfile, updateProfile } = require('../services/profileService');
 
 function renderLanding(req, res) {
@@ -10,67 +17,131 @@ function renderLanding(req, res) {
   return res.render('landing', { title: 'Bankroll IQ | Sports Betting Manager' });
 }
 
+function normalizeDashboardFilters(query = {}) {
+  const range = (query.range || '30d').trim();
+  const preset = getDateRangePreset(range);
+  const rawStartDate = (query.startDate || '').trim();
+  const rawEndDate = (query.endDate || '').trim();
+
+  const startDate = range === 'custom' ? parseDateInput(rawStartDate) : preset.startDate;
+  const endDate = range === 'custom' ? parseDateInput(rawEndDate) : preset.endDate;
+
+  return {
+    range,
+    startDate,
+    endDate,
+    startDateValue: range === 'custom' ? rawStartDate : formatDateInput(preset.startDate),
+    endDateValue: range === 'custom' ? rawEndDate : formatDateInput(preset.endDate),
+    isCustom: range === 'custom',
+    hasDateFilter: Boolean(startDate || endDate),
+  };
+}
+
+function formatTrendLabel(filters) {
+  if (!filters.hasDateFilter) {
+    return 'All-time performance';
+  }
+
+  if (filters.startDate && filters.endDate) {
+    return `${formatDateInput(filters.startDate)} to ${formatDateInput(filters.endDate)}`;
+  }
+
+  if (filters.startDate) {
+    return `Since ${formatDateInput(filters.startDate)}`;
+  }
+
+  return `Through ${formatDateInput(filters.endDate)}`;
+}
+
+function getBestAndWorstGroup(groups = []) {
+  if (!groups.length) {
+    return {
+      best: null,
+      worst: null,
+    };
+  }
+
+  const sortedByProfit = [...groups].sort((left, right) => right.netProfit - left.netProfit);
+  return {
+    best: sortedByProfit[0],
+    worst: sortedByProfit[sortedByProfit.length - 1],
+  };
+}
+
 async function renderDashboard(req, res) {
   const userId = req.session.user.id;
-
-  const [[summary]] = await pool.query(
-    `SELECT
-      COUNT(*) AS totalBets,
-      SUM(CASE WHEN result = 'win' THEN 1 ELSE 0 END) AS wins,
-      SUM(CASE WHEN result = 'loss' THEN 1 ELSE 0 END) AS losses,
-      ROUND(SUM(stake), 2) AS totalStake,
-      ROUND(SUM(profit_loss), 2) AS netProfit
-    FROM bets
-    WHERE user_id = ?`,
+  const filters = normalizeDashboardFilters(req.query);
+  const [allBets] = await pool.query(
+    'SELECT * FROM bets WHERE user_id = ? ORDER BY bet_date DESC, created_at DESC',
     [userId]
   );
 
-  const [recentBets] = await pool.query(
-    'SELECT * FROM bets WHERE user_id = ? ORDER BY bet_date DESC, created_at DESC LIMIT 5',
-    [userId]
-  );
+  const filteredBets = allBets.filter((bet) => {
+    const betDate = new Date(bet.bet_date);
+    if (Number.isNaN(betDate.getTime())) {
+      return false;
+    }
 
-  const totalBets = summary.totalBets || 0;
-  const wins = Number(summary.wins || 0);
-  const losses = Number(summary.losses || 0);
-  const pushes = totalBets - wins - losses;
-  const winRate = calculateWinRate({ wins, losses });
-  const totalStake = Number(summary.totalStake || 0);
-  const netProfit = Number(summary.netProfit || 0);
-  const roi = calculateRoi({ netProfit, totalStake });
+    if (filters.startDate && betDate < filters.startDate) {
+      return false;
+    }
 
+    if (filters.endDate && betDate > filters.endDate) {
+      return false;
+    }
+
+    return true;
+  });
+
+  const recentBets = filteredBets.slice(0, 5);
   const profile = await getOrCreateProfile(userId);
-  const currentBankroll = profile.startingBankroll + netProfit;
+  const stats = summarizeBets(filteredBets, profile.unitSize);
+  const overallStats = summarizeBets(allBets, profile.unitSize);
+  const currentBankroll = profile.startingBankroll + overallStats.netProfit;
   const bankrollRoi = profile.startingBankroll
-    ? ((netProfit / profile.startingBankroll) * 100).toFixed(1)
+    ? ((overallStats.netProfit / profile.startingBankroll) * 100).toFixed(1)
     : '0.0';
 
   let performanceMessage = 'Start logging bets to unlock your performance insights.';
-  if (totalBets > 0) {
-    if (netProfit > 0) {
-      performanceMessage = `Great work — you are up $${netProfit.toFixed(2)} with a ${roi}% ROI.`;
-    } else if (netProfit < 0) {
-      performanceMessage = `You are down $${Math.abs(netProfit).toFixed(2)}. Review recent bets and tighten your unit sizing.`;
+  if (stats.totalBets > 0) {
+    if (stats.netProfit > 0) {
+      performanceMessage = `You are up $${stats.netProfit.toFixed(2)} in this window with a ${stats.roi}% ROI.`;
+    } else if (stats.netProfit < 0) {
+      performanceMessage = `You are down $${Math.abs(stats.netProfit).toFixed(2)} in this window. Audit sizing and recent bet selection.`;
     } else {
-      performanceMessage = 'You are break-even right now. Keep tracking for a clearer edge signal.';
+      performanceMessage = 'You are flat in this window. More volume will make the trend clearer.';
     }
   }
 
+  const sportGroups = groupPerformance(filteredBets, 'sport', profile.unitSize);
+  const { best, worst } = getBestAndWorstGroup(sportGroups);
+
   return res.render('dashboard', {
     title: 'Dashboard',
+    filters,
+    filterLabel: formatTrendLabel(filters),
     stats: {
-      totalBets,
-      wins,
-      losses,
-      pushes,
-      totalStake,
-      netProfit,
-      winRate,
-      roi,
+      totalBets: stats.totalBets,
+      wins: stats.wins,
+      losses: stats.losses,
+      pushes: stats.pushes,
+      totalStake: stats.totalStake,
+      netProfit: stats.netProfit,
+      winRate: stats.winRate,
+      roi: stats.roi,
       startingBankroll: profile.startingBankroll,
       currentBankroll,
       unitSize: profile.unitSize,
       bankrollRoi,
+      averageStake: stats.averageStake,
+      units: stats.units,
+      biggestWin: stats.biggestWin,
+      biggestLoss: stats.biggestLoss,
+      currentStreak: stats.currentStreak,
+    },
+    highlights: {
+      bestSport: best,
+      toughestSport: worst,
     },
     recentBets,
     performanceMessage,
@@ -113,38 +184,24 @@ async function updateBankrollSettings(req, res) {
 
 async function renderStats(req, res) {
   const userId = req.session.user.id;
-
-  const [sportStats] = await pool.query(
-    `SELECT
-      sport,
-      COUNT(*) AS totalBets,
-      ROUND(SUM(stake), 2) AS totalStake,
-      ROUND(SUM(profit_loss), 2) AS netProfit,
-      SUM(CASE WHEN result = 'win' THEN 1 ELSE 0 END) AS wins,
-      SUM(CASE WHEN result = 'loss' THEN 1 ELSE 0 END) AS losses
-    FROM bets
-    WHERE user_id = ?
-    GROUP BY sport
-    ORDER BY totalBets DESC`,
+  const profile = await getOrCreateProfile(userId);
+  const [bets] = await pool.query(
+    'SELECT * FROM bets WHERE user_id = ? ORDER BY bet_date DESC, created_at DESC',
     [userId]
   );
 
-  const [betTypeStats] = await pool.query(
-    `SELECT
-      bet_type AS betType,
-      COUNT(*) AS totalBets,
-      ROUND(SUM(profit_loss), 2) AS netProfit
-    FROM bets
-    WHERE user_id = ?
-    GROUP BY bet_type
-    ORDER BY totalBets DESC`,
-    [userId]
-  );
+  const sportStats = groupPerformance(bets, 'sport', profile.unitSize);
+  const betTypeStats = groupPerformance(bets, 'bet_type', profile.unitSize).map((row) => ({
+    ...row,
+    betType: row.key,
+  }));
+  const monthlyRecap = buildMonthlyRecap(bets, profile.unitSize);
 
   return res.render('stats', {
     title: 'Stats',
     sportStats,
     betTypeStats,
+    monthlyRecap,
   });
 }
 

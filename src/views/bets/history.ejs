@@ -1,5 +1,5 @@
 <%- include('../partials/header') %>
-<div class="page-title-row"><h1>Bet History</h1><a href="/bets/history/export" class="btn btn-small">Export CSV</a></div>
+<div class="page-title-row"><h1>Bet History</h1><a href="/bets/history/export?<%= new URLSearchParams({ sport: filters.sport, result: filters.result, startDate: filters.startDate, endDate: filters.endDate }).toString() %>" class="btn btn-small">Export CSV</a></div>
 
 <section class="card">
   <form method="GET" action="/bets/history" class="form-grid two-col">
@@ -33,7 +33,7 @@
       <input type="date" name="endDate" value="<%= filters.endDate %>">
     </label>
 
-    <div class="full">
+    <div class="full filter-actions">
       <button type="submit" class="btn btn-small">Apply Filters</button>
       <a href="/bets/history" class="btn btn-secondary btn-small">Reset</a>
     </div>
@@ -46,12 +46,20 @@
     <p><strong><%= summary.totalBets %></strong></p>
   </article>
   <article class="card">
+    <h3>Record</h3>
+    <p><strong><%= summary.wins %>-<%= summary.losses %>-<%= summary.pushes %></strong></p>
+  </article>
+  <article class="card">
     <h3>Net Profit</h3>
     <p class="<%= Number(summary.netProfit) >= 0 ? 'positive' : 'negative' %>"><strong>$<%= summary.netProfit %></strong></p>
   </article>
   <article class="card">
     <h3>Total Stake</h3>
     <p><strong>$<%= summary.totalStake %></strong></p>
+  </article>
+  <article class="card">
+    <h3>Average Stake</h3>
+    <p><strong>$<%= summary.averageStake %></strong></p>
   </article>
   <article class="card">
     <h3>ROI</h3>
