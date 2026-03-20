@@ -1,151 +1,297 @@
 <%- include('partials/header') %>
 <div class="landing-page">
-  <section class="hero hero-split">
+  <section class="hero hero-split hero-premium">
     <div class="hero-copy">
       <p class="eyebrow">Bet tracking + bankroll analysis for serious bettors</p>
       <h1>Stop guessing at your performance. Start managing every wager like an investment.</h1>
-      <p class="hero-lead">Bankroll IQ helps serious sports bettors track every bet, measure real ROI, and build a bankroll strategy they can actually trust over time.</p>
+      <p class="hero-lead">Bankroll IQ gives disciplined bettors a clean record of every wager, clear ROI by angle, and the bankroll context needed to judge strategy on evidence instead of emotion.</p>
+
       <div class="hero-actions">
         <a class="btn" href="/auth/register">Start Tracking Free</a>
         <a class="btn btn-secondary" href="/auth/login">Log In</a>
       </div>
-      <div class="hero-metrics">
-        <div class="metric-chip">
-          <strong>Know your real ROI</strong>
-          <span>See whether your profit is coming from a real edge or one hot week.</span>
+
+      <div class="hero-metrics hero-metrics-extended">
+        <div class="metric-chip metric-chip-premium">
+          <span class="metric-chip-label">Bankroll visibility</span>
+          <strong>Know how your units are actually performing.</strong>
+          <span>Track profit, ROI, stake sizing, and recent form without relying on memory or scattered notes.</span>
         </div>
-        <div class="metric-chip">
-          <strong>Protect your units</strong>
-          <span>Catch bad sizing habits before they turn into avoidable bankroll damage.</span>
+        <div class="metric-chip metric-chip-premium">
+          <span class="metric-chip-label">Review with context</span>
+          <strong>See what is repeatable — and what is just noise.</strong>
+          <span>Break down results by sport, market, and timeframe to separate process quality from short-term variance.</span>
+        </div>
+      </div>
+
+      <div class="hero-proof-row" aria-label="What users can review inside Bankroll IQ">
+        <div class="proof-pill">
+          <strong>ROI by market</strong>
+          <span>Spot where your edge holds.</span>
+        </div>
+        <div class="proof-pill">
+          <strong>Unit discipline</strong>
+          <span>Catch sizing drift early.</span>
+        </div>
+        <div class="proof-pill">
+          <strong>Bet history</strong>
+          <span>Filter every wager with context.</span>
         </div>
       </div>
     </div>
 
-    <aside class="hero-panel card">
-      <div class="panel-heading">
-        <span class="status-dot"></span>
-        <div>
-          <p>Sample dashboard preview</p>
-          <small>Illustrative data to show how Bankroll IQ surfaces performance.</small>
+    <aside class="hero-panel card dashboard-preview">
+      <div class="panel-heading panel-heading-premium">
+        <div class="panel-title-row">
+          <span class="status-dot"></span>
+          <div>
+            <p>Performance dashboard</p>
+            <small>30-day snapshot · synced after latest graded bet</small>
+          </div>
         </div>
+        <span class="panel-tag">Live review loop</span>
       </div>
-      <div class="preview-scoreboard">
+
+      <div class="preview-section-header">
+        <div>
+          <span class="section-label">Portfolio overview</span>
+          <strong>March performance</strong>
+        </div>
+        <span class="delta-pill positive">+2.1u this week</span>
+      </div>
+
+      <div class="preview-scoreboard preview-scoreboard-premium"></div>
         <div>
           <span>Net Profit</span>
           <strong class="positive">+$1,284</strong>
+          <small class="positive">▲ 8.7% ROI</small>
         </div>
         <div>
-          <span>ROI</span>
-          <strong>8.7%</strong>
+          <span>Average Stake</span>
+          <strong>1.18u</strong>
+          <small>Disciplined sizing</small>
         </div>
         <div>
-          <span>Record</span>
-          <strong>142-109</strong>
+          <span>Win Rate</span>
+          <strong>56.6%</strong>
+          <small>142-109 record</small>
+        </div>
+        <div>
+          <span>Largest Drawdown</span>
+          <strong class="negative">-3.4u</strong>
+          <small>Contained risk</small>
         </div>
       </div>
-      <div class="mini-chart" aria-hidden="true">
-        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      
+      <div class="preview-chart-card">
+        <div class="preview-chart-header">
+          <div>
+            <span class="section-label">Bankroll curve</span>
+            <strong>Profit by graded day</strong>
+          </div>
+          <div class="chart-legend">
+            <span><i></i> Net units</span>
+            <span><i class="muted-dot"></i> Rolling ROI</span>
+          </div>
+        </div>
+        <div class="mini-chart mini-chart-line" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="chart-axis">
+          <span>Week 1</span>
+          <span>Week 2</span>
+          <span>Week 3</span>
+          <span>Today</span>
+        </div>
       </div>
-      <ul class="hero-points checked-list">
-        <li>Log bets with odds, stake, notes, and outcome tracking in one place.</li>
-        <li>Break down profit by sport, market, and date range instead of relying on memory.</li>
-        <li>Spot losing patterns before they become expensive habits.</li>
-      </ul>
+
+      <div class="preview-lower-grid">
+        <div class="activity-card">
+          <div class="preview-subheader">
+            <strong>Recent bets</strong>
+            <span>Last 3 graded</span>
+          </div>
+          <ul class="activity-list">
+            <li>
+              <div>
+                <strong>NBA · Spread</strong>
+                <span>Celtics -4.5 · 1.0u</span>
+              </div>
+              <b class="positive">+0.91u</b>
+            </li>
+            <li>
+              <div>
+                <strong>NCAAB · Total</strong>
+                <span>Under 146.5 · 1.25u</span>
+              </div>
+              <b class="negative">-1.25u</b>
+            </li>
+            <li>
+              <div>
+                <strong>NHL · Moneyline</strong>
+                <span>Rangers ML · 0.8u</span>
+              </div>
+              <b class="positive">+0.64u</b>
+            </li>
+          </ul>
+        </div>
+
+        <div class="activity-card insight-stack">
+          <div class="preview-subheader">
+            <strong>Review cues</strong>
+            <span>What to inspect next</span>
+          </div>
+          <div class="insight-row">
+            <span>Player props</span>
+            <b class="positive">+11.2% ROI</b>
+          </div>
+          <div class="insight-row">
+            <span>2u stakes</span>
+            <b class="negative">-6.4% ROI</b>
+          </div>
+          <div class="insight-row">
+            <span>Late adds</span>
+            <b>9 bets logged after noon</b>
+          </div>
+        </div>
+      </div>
     </aside>
   </section>
 
-  <section class="value-strip card">
+  <section class="value-strip card value-strip-premium">
     <div>
-      <p class="eyebrow">Why bettors stick with it</p>
-      <h2>Your edge is not just your picks — it is the system behind them.</h2>
+      <p class="eyebrow">A cleaner operating system for betting decisions</p>
+      <h2>Built for bettors who want measurable performance, not vague confidence.</h2>
     </div>
-    <div class="value-pills">
-      <span class="pill">See actual ROI</span>
-      <span class="pill">Track units consistently</span>
-      <span class="pill">Find profitable angles</span>
-      <span class="pill">Separate process from variance</span>
+    <div class="value-pills value-pills-grid">
+      <span class="pill">Profit by sport and market</span>
+      <span class="pill">Unit-based bankroll tracking</span>
+      <span class="pill">Recent form with context</span>
+      <span class="pill">Date-range review for every run</span>
+      <span class="pill">Faster post-slate analysis</span>
+      <span class="pill">Less spreadsheet cleanup</span>
     </div>
   </section>
 
-  <section class="feature-grid landing-features">
-    <article class="card feature-card feature-card-highlight">
-      <p class="feature-kicker">Performance breakdowns</p>
-      <h3>See exactly which bets are making you money — and which ones are draining your bankroll.</h3>
-      <p>Compare profit, hit rate, units, and volume across sports, markets, and timeframes so you can stop treating every wager the same.</p>
-    </article>
-    <article class="card feature-card feature-card-highlight">
-      <p class="feature-kicker">Fast logging</p>
-      <h3>Log bets in under a minute while the details still matter.</h3>
-      <p>Capture odds, stake size, notes, and outcomes in one workflow that is quick enough to keep up with daily betting.</p>
-    </article>
-    <article class="card feature-card feature-card-highlight">
-      <p class="feature-kicker">Bankroll discipline</p>
-      <h3>Turn bet sizing into a repeatable process instead of an emotional decision.</h3>
-      <p>Keep a consistent unit-based record so you can see how your staking strategy holds up through winning stretches and losing ones.</p>
-    </article>
-  </section>
-
-  <section class="card showcase-card product-proof">
+  <section class="card showcase-card product-proof product-proof-premium">
     <div class="showcase-copy">
-      <p class="eyebrow">What makes the product useful</p>
-      <h2>A clearer review loop for every slate, streak, and season.</h2>
-      <p>Each view is built to answer a specific question: what you bet, what happened, and what should change next.</p>
+      <p class="eyebrow">What you can actually measure</p>
+      <h2>Turn a running bet log into a real review process.</h2>
+      <p>Instead of asking whether you are up or down, Bankroll IQ helps you inspect how you are winning, where you are leaking units, and which patterns deserve more volume.</p>
     </div>
-    <div class="showcase-grid">
-      <div class="showcase-item">
-        <strong>Dashboard summary</strong>
-        <span>Get a quick read on bankroll movement, ROI, record, and recent results without opening a spreadsheet.</span>
+    <div class="showcase-grid showcase-grid-premium">
+      <div class="showcase-item showcase-module">
+        <span class="showcase-label">Breakdown module</span>
+        <strong>Compare sports, markets, and timeframes side by side.</strong>
+        <span>See which bet types drive profit, which categories carry too much volume, and where your ROI holds up over a meaningful sample.</span>
       </div>
-      <div class="showcase-item">
-        <strong>Bet history filters</strong>
-        <span>Review performance by sport, bet type, timeframe, and notes so repeat mistakes are easier to catch.</span>
+      <div class="showcase-item showcase-module">
+        <span class="showcase-label">Bankroll review</span>
+        <strong>Audit stake sizing against actual outcomes.</strong>
+        <span>Review how aggressive bet sizing affects swings, identify oversized losses, and keep unit allocation aligned with your process.</span>
       </div>
-      <div class="showcase-item">
-        <strong>Unit tracking</strong>
-        <span>See whether your stake sizing is supporting your edge or quietly eroding it.</span>
+      <div class="showcase-item showcase-module">
+        <span class="showcase-label">Bet history</span>
+        <strong>Filter every wager down to the exact context you need.</strong>
+        <span>Search recent bets by date, sport, market, and notes so post-slate review is fast enough to become routine.</span>
       </div>
-      <div class="showcase-item">
-        <strong>Built to grow with you</strong>
-        <span>Designed for deeper analytics over time, including richer breakdowns, exports, and advanced tracking workflows.</span>
+      <div class="showcase-item showcase-module">
+        <span class="showcase-label">Decision quality</span>
+        <strong>Separate short-term results from sustainable habits.</strong>
+        <span>Use recent streaks as a prompt for review instead of a verdict on strategy, so hot runs and cold stretches do not distort the data.</span>
       </div>
     </div>
   </section>
 
-  <section class="process-grid">
-    <article class="card process-card">
-      <span class="process-step">01</span>
-      <h3>Log the bet</h3>
-      <p>Capture the sport, market, odds, stake, and reasoning while the context is still fresh.</p>
+  <section class="feature-grid landing-features landing-features-premium">
+    <article class="card feature-card feature-card-highlight feature-card-premium">
+      <div class="feature-icon" aria-hidden="true">↗</div>
+      <p class="feature-kicker">Performance clarity</p>
+      <h3>See where profit is actually coming from.</h3>
+      <p>Review ROI, record, units, and volume across the segments that matter so winning weeks do not hide weak categories.</p>
+      <ul class="feature-list checked-list">
+        <li>Spot profitable sports and markets</li>
+        <li>Compare short-term runs against longer samples</li>
+        <li>Review results without exporting to spreadsheets</li>
+      </ul>
     </article>
-    <article class="card process-card">
-      <span class="process-step">02</span>
-      <h3>Review the results</h3>
-      <p>Track wins, losses, pushes, units, and bankroll movement with a record you can trust later.</p>
+    <article class="card feature-card feature-card-highlight feature-card-premium">
+      <div class="feature-icon" aria-hidden="true">◎</div>
+      <p class="feature-kicker">Fast, complete logging</p>
+      <h3>Capture the details that make later analysis useful.</h3>
+      <p>Log odds, stake size, notes, and outcomes in one place, while the bet context is still fresh and accurate.</p>
+      <ul class="feature-list checked-list">
+        <li>Record every wager in a consistent format</li>
+        <li>Keep reasoning attached to each bet</li>
+        <li>Reduce missing data during review</li>
+      </ul>
     </article>
-    <article class="card process-card">
-      <span class="process-step">03</span>
-      <h3>Adjust with evidence</h3>
-      <p>Use real data to tighten your staking, cut bad habits, and focus on the bets that actually perform.</p>
+    <article class="card feature-card feature-card-highlight feature-card-premium">
+      <div class="feature-icon" aria-hidden="true">◌</div>
+      <p class="feature-kicker">Disciplined bankroll management</p>
+      <h3>Keep unit sizing accountable through streaks and swings.</h3>
+      <p>Make staking decisions easier to audit by keeping bankroll movement, drawdowns, and unit exposure visible over time.</p>
+      <ul class="feature-list checked-list">
+        <li>Catch oversized bets before they become habit</li>
+        <li>See how volatility changes with stake size</li>
+        <li>Stay process-driven when results swing</li>
+      </ul>
     </article>
   </section>
 
-  <section class="card testimonial-band belief-band">
+  <section class="trust-grid" aria-label="Operational proof points">
+    <article class="card trust-card">
+      <span class="trust-label">What you can track</span>
+      <strong>Every wager in one ledger</strong>
+      <p>Odds, stake, notes, outcome, and timing stored in a format that is easy to review later.</p>
+    </article>
+    <article class="card trust-card">
+      <span class="trust-label">What you can measure</span>
+      <strong>ROI with segment-level context</strong>
+      <p>Move past headline profit and inspect performance by category, sample, and bankroll impact.</p>
+    </article>
+    <article class="card trust-card">
+      <span class="trust-label">What you can improve</span>
+      <strong>A repeatable post-slate workflow</strong>
+      <p>Review recent bets quickly enough to tighten sizing, remove weak angles, and reinforce disciplined habits.</p>
+    </article>
+  </section>
+
+  <section class="workflow-shell card">
+    <div class="workflow-header">
+      <p class="eyebrow">Simple workflow</p>
+      <h2>A tighter review loop from first bet to bankroll decision.</h2>
+      <p>Bankroll IQ keeps the operating cadence straightforward: capture the wager, grade the result, then review the evidence before the next slate.</p>
+    </div>
+    <div class="process-grid process-grid-premium">
+      <article class="card process-card process-card-premium">
+        <span class="process-step">01</span>
+        <h3>Log the wager</h3>
+        <p>Save the sport, market, odds, unit size, and reasoning while the setup is still clear.</p>
+      </article>
+      <article class="card process-card process-card-premium">
+        <span class="process-step">02</span>
+        <h3>Grade the outcome</h3>
+        <p>Keep profit, loss, and bankroll movement tied to the original bet so your record stays consistent.</p>
+      </article>
+      <article class="card process-card process-card-premium">
+        <span class="process-step">03</span>
+        <h3>Adjust with evidence</h3>
+        <p>Review trends by segment, inspect unit discipline, and make the next decision with more context than the last one.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="card cta-banner cta-banner-premium">
     <div>
-      <p class="eyebrow">Designed for accountability</p>
-      <h2>Good results do not always mean good decisions.</h2>
+      <p class="eyebrow">Start your next review with real data</p>
+      <h2>Track your next wager today and start building a record you can trust this week.</h2>
+      <p>Set up your account, log the next bet, and turn recent action into a usable performance baseline instead of another slate you have to reconstruct later.</p>
     </div>
-    <p class="belief-copy">Bankroll IQ helps you separate process from variance so one lucky run does not hide bad habits — and one cold stretch does not erase a strategy that is actually working.</p>
-  </section>
-
-  <section class="card cta-banner">
-    <div>
-      <p class="eyebrow">Start now</p>
-      <h2>Start building a betting system you can trust long term.</h2>
-      <p>Open your account, track your next wager, and turn your betting history into something useful instead of something you guess about.</p>
-    </div>
-    <div class="cta-actions">
-      <a class="btn" href="/auth/register">Start Tracking Free</a>
-      <a class="btn btn-secondary" href="/auth/login">Log In</a>
+    <div class="cta-actions cta-actions-premium">
+      <a class="btn" href="/auth/register">Create Free Account</a>
+      <a class="btn btn-secondary" href="/auth/login">View Your Dashboard</a>
+      <span class="cta-note">Start tracking in minutes.</span>
     </div>
   </section>
 </div>
