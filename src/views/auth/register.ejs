@@ -1,39 +1,157 @@
 <%- include('../partials/header') %>
-<section class="card auth-card">
-  <h2>Create your account</h2>
-  <p class="muted">Start tracking your bets with the discipline-focused dashboard.</p>
-  <form method="POST" action="/auth/register" class="form-grid" autocomplete="on">
-    <label>
-      Name
-      <input type="text" name="name" required autocomplete="name" value="<%= formData?.name || '' %>" />
-    </label>
-    <label>
-      Email
-      <input type="email" name="email" required autocomplete="email" value="<%= formData?.email || '' %>" />
-    </label>
-    <label>
-      Password
-      <div class="password-input-wrap">
-        <input id="register-password" type="password" name="password" required minlength="8" autocomplete="new-password" />
-        <button type="button" class="link-btn password-toggle" data-password-toggle="register-password" aria-label="Show password">Show</button>
+<section class="auth-shell">
+  <aside class="auth-sidecard auth-sidecard-dark">
+    <p class="eyebrow">Create your account</p>
+    <h1>Start building a betting record you can trust.</h1>
+    <p class="auth-side-lead">Set up your account and turn your next wager into the start of a cleaner, more disciplined review process.</p>
+    <div class="auth-side-list">
+      <div class="auth-side-item">
+        <strong>Track every bet</strong>
+        <span>Keep odds, stake size, and notes in one ledger.</span>
       </div>
-    </label>
-    <label>
-      Confirm password
-      <div class="password-input-wrap">
-        <input id="register-confirm-password" type="password" name="confirmPassword" required minlength="8" autocomplete="new-password" />
-        <button type="button" class="link-btn password-toggle" data-password-toggle="register-confirm-password" aria-label="Show password">Show</button>
+      <div class="auth-side-item">
+        <strong>Measure performance</strong>
+        <span>See ROI, win rate, and profit without a spreadsheet.</span>
       </div>
-    </label>
-    <label class="checkbox-label">
-      <input type="checkbox" name="rememberMe" <%= formData?.rememberMe !== false ? 'checked' : '' %> />
-      Keep me signed in for 30 days
-    </label>
-    <button class="btn" type="submit">Create Account</button>
-  </form>
-  <p class="auth-switch">Already have an account? <a href="/auth/login">Login</a>.</p>
+      <div class="auth-side-item">
+        <strong>Manage bankroll</strong>
+        <span>Review your trend with clearer context over time.</span>
+      </div>
+    </div>
+  </aside>
+
+  <section class="card auth-card auth-card-premium">
+    <p class="eyebrow">Register</p>
+    <h2>Create your account</h2>
+    <p class="muted auth-intro">A few details and you are ready to start logging bets and reviewing results.</p>
+    <form method="POST" action="/auth/register" class="form-grid auth-form" autocomplete="on">
+      <label>
+        <span>Name</span>
+        <input type="text" name="name" required autocomplete="name" value="<%= formData?.name || '' %>" data-field="name" />
+        <small class="field-error" data-error-for="name" aria-live="polite"></small>
+      </label>
+      <label>
+        <span>Email</span>
+        <input type="email" name="email" required autocomplete="email" value="<%= formData?.email || '' %>" data-field="email" />
+        <small class="field-error" data-error-for="email" aria-live="polite"></small>
+      </label>
+      <label>
+        <span>Password</span>
+        <div class="password-input-wrap">
+          <input id="register-password" type="password" name="password" required minlength="8" autocomplete="new-password" data-field="password" />
+          <button type="button" class="link-btn password-toggle" data-password-toggle="register-password" aria-label="Show password">Show</button>
+        </div>
+        <small class="field-hint">Use at least 8 characters.</small>
+        <small class="field-error" data-error-for="password" aria-live="polite"></small>
+      </label>
+      <label>
+        <span>Confirm password</span>
+        <div class="password-input-wrap">
+          <input id="register-confirm-password" type="password" name="confirmPassword" required minlength="8" autocomplete="new-password" data-field="confirmPassword" />
+          <button type="button" class="link-btn password-toggle" data-password-toggle="register-confirm-password" aria-label="Show password">Show</button>
+        </div>
+        <small class="field-error" data-error-for="confirmPassword" aria-live="polite"></small>
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" name="rememberMe" <%= formData?.rememberMe !== false ? 'checked' : '' %> />
+        Keep me signed in for 30 days
+      </label>
+      <button class="btn auth-submit" type="submit">Create Account</button>
+    </form>
+    <p class="auth-trust-note">No credit card required. Start tracking in minutes.</p>
+    <p class="auth-switch">Already have an account? <a href="/auth/login">Log in</a>.</p>
+  </section>
 </section>
 <script>
+  const registerForm = document.querySelector('.auth-form');
+
+  if (registerForm) {
+    const messages = {
+      name: {
+        valueMissing: 'Enter your name.'
+      },
+      email: {
+        valueMissing: 'Enter your email address.',
+        typeMismatch: 'Enter a valid email address.'
+      },
+      password: {
+        valueMissing: 'Create a password.',
+        tooShort: 'Password must be at least 8 characters.'
+      },
+      confirmPassword: {
+        valueMissing: 'Confirm your password.'
+      }
+    };
+
+    const setFieldError = (input) => {
+      const error = registerForm.querySelector(`[data-error-for="${input.name}"]`);
+      if (!error) return;
+
+      if (input.name === 'confirmPassword') {
+        const password = registerForm.querySelector('[name="password"]');
+        if (input.value && password && input.value !== password.value) {
+          input.setCustomValidity('Passwords do not match.');
+        } else {
+          input.setCustomValidity('');
+        }
+      }
+
+      if (input.validity.valid) {
+        input.removeAttribute('aria-invalid');
+        error.textContent = '';
+        return;
+      }
+
+      const fieldMessages = messages[input.name] || {};
+      let message = input.validationMessage || 'Check this field.';
+
+      Object.keys(fieldMessages).some((key) => {
+        if (input.validity[key]) {
+          message = fieldMessages[key];
+          return true;
+        }
+        return false;
+      });
+
+      if (input.name === 'confirmPassword' && input.validationMessage === 'Passwords do not match.') {
+        message = 'Passwords do not match.';
+      }
+
+      input.setAttribute('aria-invalid', 'true');
+      error.textContent = message;
+    };
+
+    const confirmPassword = registerForm.querySelector('[name="confirmPassword"]');
+
+    registerForm.querySelectorAll('[data-field]').forEach((input) => {
+      input.addEventListener('input', () => {
+        setFieldError(input);
+        if (input.name === 'password' && confirmPassword) {
+          setFieldError(confirmPassword);
+        }
+      });
+      input.addEventListener('blur', () => setFieldError(input));
+      input.addEventListener('invalid', (event) => {
+        event.preventDefault();
+        setFieldError(input);
+      });
+    });
+
+    registerForm.addEventListener('submit', (event) => {
+      let hasError = false;
+      registerForm.querySelectorAll('[data-field]').forEach((input) => {
+        setFieldError(input);
+        if (!input.validity.valid) {
+          hasError = true;
+        }
+      });
+
+      if (hasError) {
+        event.preventDefault();
+      }
+    });
+  }
+
   document.querySelectorAll('[data-password-toggle]').forEach((button) => {
     const inputId = button.getAttribute('data-password-toggle');
     const input = document.getElementById(inputId);
