@@ -3,7 +3,31 @@
   <h1>Edit Bet</h1>
   <form method="POST" action="/bets/<%= bet.id %>/edit" class="form-grid two-col">
     <label>Sport<input type="text" name="sport" value="<%= bet.sport %>" required /></label>
-    <label>Bet Type<input type="text" name="betType" value="<%= bet.bet_type %>" required /></label>
+    <label>
+      Bet Type
+      <select name="betTypeChoice" required data-bet-type-select>
+        <option value="">Select</option>
+        <option value="Spread" <%= betTypeForm.betTypeChoice === 'Spread' ? 'selected' : '' %>>Spread</option>
+        <option value="Moneyline" <%= betTypeForm.betTypeChoice === 'Moneyline' ? 'selected' : '' %>>Moneyline</option>
+        <option value="Total" <%= betTypeForm.betTypeChoice === 'Total' ? 'selected' : '' %>>Total</option>
+        <option value="Player Prop" <%= betTypeForm.betTypeChoice === 'Player Prop' ? 'selected' : '' %>>Player Prop</option>
+        <option value="Team Prop" <%= betTypeForm.betTypeChoice === 'Team Prop' ? 'selected' : '' %>>Team Prop</option>
+        <option value="Parlay" <%= betTypeForm.betTypeChoice === 'Parlay' ? 'selected' : '' %>>Parlay</option>
+        <option value="Same Game Parlay" <%= betTypeForm.betTypeChoice === 'Same Game Parlay' ? 'selected' : '' %>>Same Game Parlay</option>
+        <option value="Teaser" <%= betTypeForm.betTypeChoice === 'Teaser' ? 'selected' : '' %>>Teaser</option>
+        <option value="Round Robin" <%= betTypeForm.betTypeChoice === 'Round Robin' ? 'selected' : '' %>>Round Robin</option>
+        <option value="Future" <%= betTypeForm.betTypeChoice === 'Future' ? 'selected' : '' %>>Future</option>
+        <option value="Other" <%= betTypeForm.betTypeChoice === 'Other' ? 'selected' : '' %>>Other</option>
+      </select>
+    </label>
+    <label class="<%= betTypeForm.betTypeChoice === 'Other' ? '' : 'is-hidden' %>" data-custom-bet-type-field>
+      Custom Bet Type
+      <input type="text" name="customBetType" value="<%= betTypeForm.customBetType %>" <%= betTypeForm.betTypeChoice === 'Other' ? '' : 'disabled' %> />
+    </label>
+    <label class="<%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(betTypeForm.betTypeChoice) ? '' : 'is-hidden' %>" data-leg-count-field>
+      Number of Legs
+      <input type="number" name="legCount" min="2" step="1" value="<%= betTypeForm.legCount || '' %>" <%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(betTypeForm.betTypeChoice) ? '' : 'disabled' %> />
+    </label>
     <label class="full">Market<input type="text" name="market" value="<%= bet.market %>" required /></label>
     <label>Odds<input type="number" step="1" name="odds" value="<%= bet.odds %>" required /></label>
     <label>Stake<input type="number" step="0.01" name="stake" value="<%= bet.stake %>" required /></label>
@@ -19,4 +43,43 @@
     <button class="btn full" type="submit">Update Bet</button>
   </form>
 </section>
+<script>
+  const betTypeSelect = document.querySelector('[data-bet-type-select]');
+  const customBetTypeField = document.querySelector('[data-custom-bet-type-field]');
+  const legCountField = document.querySelector('[data-leg-count-field]');
+  const legCountTypes = new Set(['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin']);
+
+  const syncBetTypeFields = () => {
+    if (!betTypeSelect) return;
+
+    const selectedValue = betTypeSelect.value;
+    const customInput = customBetTypeField?.querySelector('input');
+    const legCountInput = legCountField?.querySelector('input');
+
+    if (customBetTypeField) {
+      const showCustom = selectedValue === 'Other';
+      customBetTypeField.classList.toggle('is-hidden', !showCustom);
+      if (customInput) {
+        customInput.required = showCustom;
+        customInput.disabled = !showCustom;
+        if (!showCustom) customInput.value = '';
+      }
+    }
+
+    if (legCountField) {
+      const showLegCount = legCountTypes.has(selectedValue);
+      legCountField.classList.toggle('is-hidden', !showLegCount);
+      if (legCountInput) {
+        legCountInput.required = showLegCount;
+        legCountInput.disabled = !showLegCount;
+        if (!showLegCount) legCountInput.value = '';
+      }
+    }
+  };
+
+  if (betTypeSelect) {
+    betTypeSelect.addEventListener('change', syncBetTypeFields);
+    syncBetTypeFields();
+  }
+</script>
 <%- include('../partials/footer') %>

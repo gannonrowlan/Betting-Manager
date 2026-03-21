@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.get('/new', requireAuth, betController.renderAddBet);
 router.post('/new', requireAuth, betController.createBet);
+router.post('/new/tips-dismiss', requireAuth, betController.dismissAddBetTipsPrompt);
 router.get('/history', requireAuth, betController.renderHistory);
 router.get('/history/export', requireAuth, betController.exportHistoryCsv);
 router.get('/:id/edit', requireAuth, betController.renderEditBet);

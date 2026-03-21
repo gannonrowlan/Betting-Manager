@@ -86,7 +86,7 @@
         <tr>
           <td><%= new Date(bet.bet_date).toISOString().slice(0,10) %></td>
           <td><%= bet.sport %></td>
-          <td><%= bet.bet_type %></td>
+          <td><%= bet.leg_count ? `${bet.bet_type} (${bet.leg_count} legs)` : bet.bet_type %></td>
           <td><%= bet.market %></td>
           <td><%= bet.odds %></td>
           <td>$<%= Number(bet.stake).toFixed(2) %></td>

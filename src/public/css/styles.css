@@ -523,6 +523,94 @@ td {
   margin: 0.3rem 0 0.5rem;
 }
 
+.dashboard-shell {
+  display: grid;
+  gap: 1.2rem;
+  padding: 0.8rem 0 3rem;
+}
+
+.dashboard-hero-premium {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.95fr);
+  gap: 1.2rem;
+  align-items: stretch;
+  padding: 2rem;
+  background:
+    radial-gradient(circle at top left, rgba(96, 165, 250, 0.14), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 252, 0.94));
+  box-shadow: var(--shadow-lg);
+}
+
+.dashboard-hero-copy h1 {
+  margin: 0;
+  max-width: 13ch;
+  font-size: clamp(2.1rem, 3.5vw, 3.2rem);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+}
+
+.dashboard-hero-lead {
+  max-width: 58ch;
+  margin-top: 1rem;
+  line-height: 1.7;
+}
+
+.dashboard-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-top: 1.4rem;
+}
+
+.dashboard-kpi-card,
+.dashboard-filter-card,
+.dashboard-trend-card,
+.dashboard-recent-card,
+.dashboard-preview-live {
+  background:
+    radial-gradient(circle at top left, rgba(96, 165, 250, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 252, 0.94));
+}
+
+.dashboard-kpi-card {
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.dashboard-kpi-card strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 1.65rem;
+  line-height: 1;
+}
+
+.dashboard-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.85fr);
+  gap: 1.2rem;
+  align-items: start;
+}
+
+.dashboard-side-column {
+  display: grid;
+  gap: 1rem;
+}
+
+.dashboard-stats-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-scoreboard {
+  margin-top: 1rem;
+}
+
+.stat-card small {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--muted);
+}
+
 .stat-card h3 {
   margin-top: 0;
   color: #334155;
@@ -546,6 +634,112 @@ td {
   align-items: end;
 }
 
+.dashboard-trend-card {
+  padding: 1.25rem;
+}
+
+.dashboard-trend-chart {
+  position: relative;
+  margin-top: 1rem;
+}
+
+.dashboard-trend-chart svg {
+  display: block;
+  width: 100%;
+  height: 260px;
+}
+
+.dashboard-trend-area {
+  fill: rgba(37, 99, 235, 0.12);
+}
+
+.dashboard-trend-line {
+  fill: none;
+  stroke: #2563eb;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dashboard-trend-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.dashboard-trend-metric {
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.dashboard-trend-metric span,
+.dashboard-trend-metric small {
+  display: block;
+  color: var(--muted);
+}
+
+.dashboard-trend-metric strong {
+  display: block;
+  margin: 0.3rem 0;
+  font-size: 1.2rem;
+}
+
+.dashboard-trend-point {
+  fill: #ffffff;
+  stroke: #2563eb;
+  stroke-width: 1.4;
+  cursor: pointer;
+}
+
+.dashboard-trend-point:hover,
+.dashboard-trend-point:focus {
+  r: 3.2;
+  outline: none;
+}
+
+.dashboard-chart-tooltip {
+  position: absolute;
+  z-index: 2;
+  min-width: 160px;
+  padding: 0.75rem 0.85rem;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.96);
+  color: #e2e8f0;
+  box-shadow: var(--shadow-lg);
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+}
+
+.dashboard-chart-tooltip strong,
+.dashboard-chart-tooltip span {
+  display: block;
+}
+
+.dashboard-chart-tooltip strong {
+  margin-bottom: 0.3rem;
+  color: #fff;
+}
+
+.dashboard-chart-tooltip span + span {
+  margin-top: 0.18rem;
+}
+
+.dashboard-chart-axis {
+  margin-top: 0.75rem;
+  justify-content: space-between;
+}
+
+.dashboard-empty-state {
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+
 .filter-actions {
   display: flex;
   gap: 0.75rem;
@@ -565,6 +759,194 @@ td {
   font-size: 1.8rem;
   margin: 0;
   font-weight: 700;
+}
+
+.dashboard-recent-list {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.dashboard-bet-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 1.05rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.dashboard-bet-main strong,
+.dashboard-bet-meta strong {
+  display: block;
+}
+
+.dashboard-bet-main span,
+.dashboard-bet-meta span {
+  color: var(--muted);
+}
+
+.dashboard-bet-meta {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dashboard-result-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dashboard-result-win {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.dashboard-result-loss {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.dashboard-result-push {
+  color: #334155;
+  background: #e2e8f0;
+}
+
+.bet-entry-shell {
+  padding: 0.8rem 0 3rem;
+}
+
+.bet-entry-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.bet-entry-checklist > div {
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.bet-entry-checklist strong {
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.bet-entry-checklist span {
+  color: var(--muted);
+}
+
+.bet-entry-card {
+  background:
+    radial-gradient(circle at top left, rgba(96, 165, 250, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 252, 0.94));
+}
+
+.bet-entry-card {
+  padding: 1.5rem;
+}
+
+.bet-entry-form {
+  gap: 1rem;
+}
+
+.bet-entry-group {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.bet-entry-group-header strong {
+  display: block;
+  color: #0f172a;
+}
+
+.bet-entry-form label > span {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.bet-entry-form textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.bet-entry-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.is-hidden {
+  display: none !important;
+}
+
+.bet-entry-tips-link {
+  white-space: nowrap;
+}
+
+.bet-tips-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.52);
+  backdrop-filter: blur(5px);
+}
+
+.bet-tips-modal-backdrop[hidden] {
+  display: none;
+}
+
+.bet-tips-modal {
+  width: min(560px, 100%);
+  padding: 1.4rem;
+  background:
+    radial-gradient(circle at top left, rgba(96, 165, 250, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.95));
+  box-shadow: var(--shadow-lg);
+}
+
+.bet-tips-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 1rem;
+}
+
+.bet-tips-modal-header h2 {
+  margin: 0;
+}
+
+.bet-tips-modal-list {
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.bet-tips-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
 }
 
 .page-title-row {
@@ -1327,6 +1709,8 @@ td {
 @media (max-width: 980px) {
   .auth-shell,
   .hero-split,
+  .dashboard-hero-premium,
+  .dashboard-overview-grid,
   .showcase-card,
   .value-strip,
   .testimonial-band,
@@ -1361,6 +1745,8 @@ td {
   .three-up,
   .form-grid.two-col,
   .hero-metrics,
+  .dashboard-kpi-strip,
+  .dashboard-stats-grid,
   .preview-scoreboard,
   .preview-scoreboard-premium,
   .dashboard-filter-grid,
@@ -1370,6 +1756,28 @@ td {
 
   .hero-proof-row {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-trend-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .bet-entry-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bet-tips-modal-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-bet-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-bet-meta {
+    justify-content: flex-start;
   }
 
   .hero-actions,

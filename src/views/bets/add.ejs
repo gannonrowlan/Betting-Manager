@@ -1,23 +1,255 @@
 <%- include('../partials/header') %>
-<section class="card">
-  <h1>Add Bet</h1>
-  <form method="POST" action="/bets/new" class="form-grid two-col">
-    <label>Sport<input type="text" name="sport" required /></label>
-    <label>Bet Type<input type="text" name="betType" required placeholder="Spread, Total, Moneyline" /></label>
-    <label class="full">Market<input type="text" name="market" required placeholder="Lakers -4.5" /></label>
-    <label>Odds<input type="number" step="1" name="odds" required placeholder="-110 or 150" /></label>
-    <label>Stake ($)<input type="number" step="0.01" min="0" name="stake" required /></label>
-    <label>Result
-      <select name="result" required>
-        <option value="">Select</option>
-        <option value="win">Win</option>
-        <option value="loss">Loss</option>
-        <option value="push">Push</option>
-      </select>
-    </label>
-    <label>Bet Date<input type="date" name="betDate" required /></label>
-    <label class="full">Notes<textarea name="notes" rows="3"></textarea></label>
-    <button class="btn full" type="submit">Save Bet</button>
-  </form>
+<section class="bet-entry-shell">
+  <section class="bet-entry-layout">
+    <section class="card bet-entry-card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">New Wager</p>
+          <h2>Enter your bet details</h2>
+          <p class="muted">Everything here feeds your dashboard, history, and stats pages.</p>
+        </div>
+        <button type="button" class="text-link bet-entry-tips-link" data-open-bet-tips>Entry tips</button>
+      </div>
+
+      <form method="POST" action="/bets/new" class="form-grid two-col bet-entry-form" data-bet-form>
+        <section class="bet-entry-group full">
+          <div class="bet-entry-group-header">
+            <span class="section-label">Bet details</span>
+            <strong>What did you bet?</strong>
+          </div>
+          <div class="form-grid two-col">
+            <label>
+              <span>Sport</span>
+              <input type="text" name="sport" list="sport-options" required autofocus placeholder="NBA, NFL, UFC" value="<%= formData?.sport || '' %>" />
+              <datalist id="sport-options">
+                <option value="NBA"></option>
+                <option value="NFL"></option>
+                <option value="NCAAB"></option>
+                <option value="NCAAF"></option>
+                <option value="MLB"></option>
+                <option value="NHL"></option>
+                <option value="UFC"></option>
+                <option value="Boxing"></option>
+                <option value="Soccer"></option>
+                <option value="Tennis"></option>
+                <option value="Golf"></option>
+                <option value="WNBA"></option>
+              </datalist>
+            <small class="field-hint">Pick a consistent sport label so your tracking stays clean.</small>
+          </label>
+          <label>
+            <span>Bet Type</span>
+            <select name="betTypeChoice" required data-bet-type-select>
+              <option value="">Select</option>
+              <option value="Spread" <%= formData?.betTypeChoice === 'Spread' ? 'selected' : '' %>>Spread</option>
+              <option value="Moneyline" <%= formData?.betTypeChoice === 'Moneyline' ? 'selected' : '' %>>Moneyline</option>
+              <option value="Total" <%= formData?.betTypeChoice === 'Total' ? 'selected' : '' %>>Total</option>
+              <option value="Player Prop" <%= formData?.betTypeChoice === 'Player Prop' ? 'selected' : '' %>>Player Prop</option>
+              <option value="Team Prop" <%= formData?.betTypeChoice === 'Team Prop' ? 'selected' : '' %>>Team Prop</option>
+              <option value="Parlay" <%= formData?.betTypeChoice === 'Parlay' ? 'selected' : '' %>>Parlay</option>
+              <option value="Same Game Parlay" <%= formData?.betTypeChoice === 'Same Game Parlay' ? 'selected' : '' %>>Same Game Parlay</option>
+              <option value="Teaser" <%= formData?.betTypeChoice === 'Teaser' ? 'selected' : '' %>>Teaser</option>
+              <option value="Round Robin" <%= formData?.betTypeChoice === 'Round Robin' ? 'selected' : '' %>>Round Robin</option>
+              <option value="Future" <%= formData?.betTypeChoice === 'Future' ? 'selected' : '' %>>Future</option>
+              <option value="Other" <%= formData?.betTypeChoice === 'Other' ? 'selected' : '' %>>Other</option>
+            </select>
+            <small class="field-hint">Use a base bet type so your stats stay consistent.</small>
+          </label>
+          <label class="<%= formData?.betTypeChoice === 'Other' ? '' : 'is-hidden' %>" data-custom-bet-type-field>
+            <span>Custom Bet Type</span>
+            <input type="text" name="customBetType" value="<%= formData?.customBetType || '' %>" placeholder="Alt Spread, Ladder, Draw No Bet" <%= formData?.betTypeChoice === 'Other' ? '' : 'disabled' %> />
+          </label>
+          <label class="<%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(formData?.betTypeChoice) ? '' : 'is-hidden' %>" data-leg-count-field>
+            <span>Number of Legs</span>
+            <input type="number" name="legCount" min="2" step="1" value="<%= formData?.legCount || '' %>" placeholder="2" <%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(formData?.betTypeChoice) ? '' : 'disabled' %> />
+            <small class="field-hint">Only needed for multi-leg bet types.</small>
+          </label>
+          <label class="full">
+            <span>Market</span>
+            <input type="text" name="market" required placeholder="Celtics -4.5, Under 146.5, Rangers ML" value="<%= formData?.market || '' %>" />
+          </label>
+          </div>
+        </section>
+
+        <section class="bet-entry-group full">
+          <div class="bet-entry-group-header">
+            <span class="section-label">Stake and grading</span>
+            <strong>How much did you risk and how did it finish?</strong>
+          </div>
+          <div class="form-grid two-col">
+            <label>
+              <span>Odds</span>
+              <input type="number" step="1" name="odds" required placeholder="-110 or +150" value="<%= formData?.odds || '' %>" />
+              <small class="field-hint">Use American odds, negative or positive.</small>
+            </label>
+            <label>
+              <span>Stake ($)</span>
+              <input type="number" step="0.01" min="0.01" name="stake" required placeholder="25.00" value="<%= formData?.stake || '' %>" />
+              <small class="field-hint">Enter the amount you actually risked.</small>
+            </label>
+            <label>
+              <span>Result</span>
+              <select name="result" required>
+                <option value="">Select</option>
+                <option value="win" <%= formData?.result === 'win' ? 'selected' : '' %>>Win</option>
+                <option value="loss" <%= formData?.result === 'loss' ? 'selected' : '' %>>Loss</option>
+                <option value="push" <%= formData?.result === 'push' ? 'selected' : '' %>>Push</option>
+              </select>
+            </label>
+            <label>
+              <span>Bet Date</span>
+              <input type="date" name="betDate" required value="<%= formData?.betDate || '' %>" />
+            </label>
+          </div>
+        </section>
+
+        <section class="bet-entry-group full">
+          <div class="bet-entry-group-header">
+            <span class="section-label">Optional notes</span>
+            <strong>Add context for future review</strong>
+          </div>
+          <label class="full">
+            <textarea name="notes" rows="4" placeholder="Why you liked the bet, injury context, line movement, or anything you want to remember later."><%= formData?.notes || '' %></textarea>
+          </label>
+        </section>
+
+        <div class="bet-entry-actions full">
+          <button class="btn" type="submit" data-submit-button data-pending-label="Saving bet...">Save Bet</button>
+          <a href="/bets/history" class="btn btn-secondary">Back to history</a>
+        </div>
+      </form>
+    </section>
+  </section>
 </section>
+
+<% if (showAddBetTips) { %>
+  <div class="bet-tips-modal-backdrop" data-bet-tips-modal>
+    <section class="card bet-tips-modal" role="dialog" aria-modal="true" aria-labelledby="bet-tips-title">
+      <div class="bet-tips-modal-header">
+        <div>
+          <p class="eyebrow">First Bet Tips</p>
+          <h2 id="bet-tips-title">A few quick things before you save.</h2>
+        </div>
+        <button type="button" class="link-btn" data-close-bet-tips aria-label="Close tips">Close</button>
+      </div>
+      <div class="bet-entry-checklist bet-tips-modal-list">
+        <div>
+          <strong>Use the exact market</strong>
+          <span>Example: Celtics -4.5, Under 146.5, Rangers ML.</span>
+        </div>
+        <div>
+          <strong>Enter the true stake</strong>
+          <span>That keeps units, profit, and bankroll trend accurate.</span>
+        </div>
+        <div>
+          <strong>Grade it honestly</strong>
+          <span>Win, loss, or push should match the actual outcome.</span>
+        </div>
+      </div>
+      <div class="bet-tips-modal-actions">
+        <button type="button" class="btn" data-dismiss-bet-tips>Got it</button>
+      </div>
+    </section>
+  </div>
+<% } %>
+
+<script>
+  const betForm = document.querySelector('[data-bet-form]');
+
+  if (betForm) {
+    betForm.addEventListener('submit', () => {
+      const submitButton = betForm.querySelector('[data-submit-button]');
+      if (!submitButton) return;
+
+      submitButton.disabled = true;
+      submitButton.textContent = submitButton.dataset.pendingLabel || 'Submitting...';
+    });
+  }
+
+  const betTypeSelect = document.querySelector('[data-bet-type-select]');
+  const customBetTypeField = document.querySelector('[data-custom-bet-type-field]');
+  const legCountField = document.querySelector('[data-leg-count-field]');
+
+  const legCountTypes = new Set(['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin']);
+
+  const syncBetTypeFields = () => {
+    if (!betTypeSelect) return;
+
+    const selectedValue = betTypeSelect.value;
+    const customInput = customBetTypeField?.querySelector('input');
+    const legCountInput = legCountField?.querySelector('input');
+
+    if (customBetTypeField) {
+      const showCustom = selectedValue === 'Other';
+      customBetTypeField.classList.toggle('is-hidden', !showCustom);
+      if (customInput) {
+        customInput.required = showCustom;
+        customInput.disabled = !showCustom;
+        if (!showCustom) customInput.value = '';
+      }
+    }
+
+    if (legCountField) {
+      const showLegCount = legCountTypes.has(selectedValue);
+      legCountField.classList.toggle('is-hidden', !showLegCount);
+      if (legCountInput) {
+        legCountInput.required = showLegCount;
+        legCountInput.disabled = !showLegCount;
+        if (!showLegCount) legCountInput.value = '';
+      }
+    }
+  };
+
+  if (betTypeSelect) {
+    betTypeSelect.addEventListener('change', syncBetTypeFields);
+    syncBetTypeFields();
+  }
+
+  const betTipsModal = document.querySelector('[data-bet-tips-modal]');
+  const openBetTipsButton = document.querySelector('[data-open-bet-tips]');
+
+  const showBetTipsModal = () => {
+    if (!betTipsModal) return;
+    betTipsModal.removeAttribute('hidden');
+  };
+
+  const hideBetTipsModal = () => {
+    if (!betTipsModal) return;
+    betTipsModal.setAttribute('hidden', '');
+  };
+
+  if (openBetTipsButton) {
+    openBetTipsButton.addEventListener('click', showBetTipsModal);
+  }
+
+  if (betTipsModal) {
+    betTipsModal.querySelectorAll('[data-close-bet-tips]').forEach((button) => {
+      button.addEventListener('click', hideBetTipsModal);
+    });
+
+    const dismissButton = betTipsModal.querySelector('[data-dismiss-bet-tips]');
+    if (dismissButton) {
+      dismissButton.addEventListener('click', async () => {
+        try {
+          await fetch('/bets/new/tips-dismiss', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+        } catch (error) {
+          // Keep the UX moving even if the preference fails to persist.
+        }
+
+        hideBetTipsModal();
+      });
+    }
+
+    betTipsModal.addEventListener('click', (event) => {
+      if (event.target === betTipsModal) {
+        hideBetTipsModal();
+      }
+    });
+  }
+</script>
 <%- include('../partials/footer') %>

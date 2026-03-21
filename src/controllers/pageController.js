@@ -68,6 +68,81 @@ function getBestAndWorstGroup(groups = []) {
   };
 }
 
+function formatDashboardDate(date) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  }).format(date);
+}
+
+function buildTrendSeries(bets = [], startingBankroll = 0) {
+  if (!bets.length) {
+    return [];
+  }
+
+  const sortedBets = [...bets].sort((left, right) => {
+    const leftDate = new Date(left.bet_date || left.betDate);
+    const rightDate = new Date(right.bet_date || right.betDate);
+    return leftDate - rightDate;
+  });
+
+  let runningProfit = 0;
+
+  return sortedBets.reduce((series, bet) => {
+    const date = new Date(bet.bet_date || bet.betDate);
+    if (Number.isNaN(date.getTime())) {
+      return series;
+    }
+
+    const key = formatDateInput(date);
+    const profitLoss = Number(bet.profit_loss || bet.profitLoss || 0);
+    runningProfit += profitLoss;
+
+    const point = {
+      key,
+      label: formatDashboardDate(date),
+      dayProfit: profitLoss,
+      netProfit: runningProfit,
+      bankroll: startingBankroll + runningProfit,
+    };
+
+    const previousPoint = series[series.length - 1];
+    if (previousPoint && previousPoint.key === key) {
+      series[series.length - 1] = point;
+      return series;
+    }
+
+    series.push(point);
+    return series;
+  }, []);
+}
+
+function getTrendInsights(trendSeries = []) {
+  if (!trendSeries.length) {
+    return {
+      windowChange: null,
+      bestDay: null,
+      worstDay: null,
+    };
+  }
+
+  const firstPoint = trendSeries[0];
+  const lastPoint = trendSeries[trendSeries.length - 1];
+  const sortedByChange = [...trendSeries].sort((left, right) => right.dayProfit - left.dayProfit);
+
+  return {
+    windowChange: {
+      label: `${firstPoint.label} to ${lastPoint.label}`,
+      bankroll: lastPoint.bankroll,
+      netProfit: lastPoint.netProfit,
+      dayProfit: lastPoint.netProfit - firstPoint.netProfit,
+    },
+    bestDay: sortedByChange[0],
+    worstDay: sortedByChange[sortedByChange.length - 1],
+  };
+}
+
 async function renderDashboard(req, res) {
   const userId = req.session.user.id;
   const filters = normalizeDashboardFilters(req.query);
@@ -115,6 +190,8 @@ async function renderDashboard(req, res) {
 
   const sportGroups = groupPerformance(filteredBets, 'sport', profile.unitSize);
   const { best, worst } = getBestAndWorstGroup(sportGroups);
+  const trendSeries = buildTrendSeries(filteredBets, profile.startingBankroll);
+  const trendInsights = getTrendInsights(trendSeries);
 
   return res.render('dashboard', {
     title: 'Dashboard',
@@ -144,6 +221,8 @@ async function renderDashboard(req, res) {
       toughestSport: worst,
     },
     recentBets,
+    trendSeries,
+    trendInsights,
     performanceMessage,
   });
 }

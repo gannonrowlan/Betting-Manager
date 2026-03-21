@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS bets (
   user_id INT NOT NULL,
   sport VARCHAR(80) NOT NULL,
   bet_type VARCHAR(80) NOT NULL,
+  leg_count INT NULL,
   market VARCHAR(255) NOT NULL,
   odds INT NOT NULL,
   stake DECIMAL(10, 2) NOT NULL,
