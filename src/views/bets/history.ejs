@@ -1,107 +1,161 @@
 <%- include('../partials/header') %>
-<div class="page-title-row"><h1>Bet History</h1><a href="/bets/history/export?<%= new URLSearchParams({ sport: filters.sport, result: filters.result, startDate: filters.startDate, endDate: filters.endDate }).toString() %>" class="btn btn-small">Export CSV</a></div>
-
-<section class="card">
-  <form method="GET" action="/bets/history" class="form-grid two-col">
-    <label>
-      Sport
-      <select name="sport">
-        <option value="">All Sports</option>
-        <% sports.forEach((sportOption) => { %>
-          <option value="<%= sportOption %>" <%= filters.sport === sportOption ? 'selected' : '' %>><%= sportOption %></option>
-        <% }) %>
-      </select>
-    </label>
-
-    <label>
-      Result
-      <select name="result">
-        <option value="">All Results</option>
-        <option value="win" <%= filters.result === 'win' ? 'selected' : '' %>>Win</option>
-        <option value="loss" <%= filters.result === 'loss' ? 'selected' : '' %>>Loss</option>
-        <option value="push" <%= filters.result === 'push' ? 'selected' : '' %>>Push</option>
-      </select>
-    </label>
-
-    <label>
-      Start Date
-      <input type="date" name="startDate" value="<%= filters.startDate %>">
-    </label>
-
-    <label>
-      End Date
-      <input type="date" name="endDate" value="<%= filters.endDate %>">
-    </label>
-
-    <div class="full filter-actions">
-      <button type="submit" class="btn btn-small">Apply Filters</button>
-      <a href="/bets/history" class="btn btn-secondary btn-small">Reset</a>
+<section class="history-shell">
+  <section class="card history-hero">
+    <div class="page-title-row">
+      <div>
+        <p class="eyebrow">Bet History</p>
+        <h1>Your betting ledger, cleaned up.</h1>
+        <p class="muted">Review every wager, isolate patterns, and export the exact slice you need.</p>
+      </div>
+      <a href="/bets/history/export?<%= new URLSearchParams({ sport: filters.sport, sportsbook: filters.sportsbook, betType: filters.betType, result: filters.result, startDate: filters.startDate, endDate: filters.endDate }).toString() %>" class="btn btn-small">Export CSV</a>
     </div>
-  </form>
-</section>
 
-<section class="stats-grid">
-  <article class="card">
-    <h3>Total Bets</h3>
-    <p><strong><%= summary.totalBets %></strong></p>
-  </article>
-  <article class="card">
-    <h3>Record</h3>
-    <p><strong><%= summary.wins %>-<%= summary.losses %>-<%= summary.pushes %></strong></p>
-  </article>
-  <article class="card">
-    <h3>Net Profit</h3>
-    <p class="<%= Number(summary.netProfit) >= 0 ? 'positive' : 'negative' %>"><strong>$<%= summary.netProfit %></strong></p>
-  </article>
-  <article class="card">
-    <h3>Total Stake</h3>
-    <p><strong>$<%= summary.totalStake %></strong></p>
-  </article>
-  <article class="card">
-    <h3>Average Stake</h3>
-    <p><strong>$<%= summary.averageStake %></strong></p>
-  </article>
-  <article class="card">
-    <h3>ROI</h3>
-    <p><strong><%= summary.roi %>%</strong></p>
-  </article>
-  <article class="card">
-    <h3>Win Rate</h3>
-    <p><strong><%= summary.winRate %>%</strong></p>
-  </article>
-</section>
+    <div class="stats-grid history-summary-grid">
+      <article class="card stat-card">
+        <h3>Total Bets</h3>
+        <p><%= summary.totalBets %></p>
+        <small>Tracked in this view</small>
+      </article>
+      <article class="card stat-card">
+        <h3>Record</h3>
+        <p><%= summary.wins %>-<%= summary.losses %>-<%= summary.pushes %></p>
+        <small><%= summary.winRate %>% win rate</small>
+      </article>
+      <article class="card stat-card">
+        <h3>Net Profit</h3>
+        <p class="<%= Number(summary.netProfit) >= 0 ? 'positive' : 'negative' %>">$<%= summary.netProfit %></p>
+        <small><%= summary.roi %>% ROI</small>
+      </article>
+      <article class="card stat-card">
+        <h3>Total Stake</h3>
+        <p>$<%= summary.totalStake %></p>
+        <small>$<%= summary.averageStake %> average stake</small>
+      </article>
+    </div>
+  </section>
 
-<section class="card">
-  <% if (!bets.length) { %>
-    <p>No bets found for this filter selection.</p>
-  <% } else { %>
-  <table>
-    <thead>
-      <tr>
-        <th>Date</th><th>Sport</th><th>Type</th><th>Market</th><th>Odds</th><th>Stake</th><th>Result</th><th>P/L</th><th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% bets.forEach(bet => { %>
-        <tr>
-          <td><%= new Date(bet.bet_date).toISOString().slice(0,10) %></td>
-          <td><%= bet.sport %></td>
-          <td><%= bet.leg_count ? `${bet.bet_type} (${bet.leg_count} legs)` : bet.bet_type %></td>
-          <td><%= bet.market %></td>
-          <td><%= bet.odds %></td>
-          <td>$<%= Number(bet.stake).toFixed(2) %></td>
-          <td><%= bet.result %></td>
-          <td class="<%= bet.profit_loss >= 0 ? 'positive' : 'negative' %>">$<%= Number(bet.profit_loss).toFixed(2) %></td>
-          <td>
-            <a href="/bets/<%= bet.id %>/edit">Edit</a>
-            <form method="POST" action="/bets/<%= bet.id %>/delete" class="inline-form" onsubmit="return confirm('Delete this bet?');">
-              <button type="submit" class="link-btn danger">Delete</button>
-            </form>
-          </td>
-        </tr>
-      <% }) %>
-    </tbody>
-  </table>
-  <% } %>
+  <section class="card history-filter-card">
+    <div class="preview-subheader">
+      <strong>Filter history</strong>
+      <span><%= filters.hasActiveFilters ? 'Filtered view active' : 'Showing all saved bets' %></span>
+    </div>
+    <form method="GET" action="/bets/history" class="form-grid history-filter-grid">
+      <label>
+        Sport
+        <select name="sport">
+          <option value="">All Sports</option>
+          <% sports.forEach((sportOption) => { %>
+            <option value="<%= sportOption %>" <%= filters.sport === sportOption ? 'selected' : '' %>><%= sportOption %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>
+        Sportsbook
+        <select name="sportsbook">
+          <option value="">All Books</option>
+          <% sportsbooks.forEach((sportsbookOption) => { %>
+            <option value="<%= sportsbookOption %>" <%= filters.sportsbook === sportsbookOption ? 'selected' : '' %>><%= sportsbookOption %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>
+        Bet Type
+        <select name="betType">
+          <option value="">All Types</option>
+          <% betTypes.forEach((betTypeOption) => { %>
+            <option value="<%= betTypeOption %>" <%= filters.betType === betTypeOption ? 'selected' : '' %>><%= betTypeOption %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>
+        Result
+        <select name="result">
+          <option value="">All Results</option>
+          <option value="win" <%= filters.result === 'win' ? 'selected' : '' %>>Win</option>
+          <option value="loss" <%= filters.result === 'loss' ? 'selected' : '' %>>Loss</option>
+          <option value="push" <%= filters.result === 'push' ? 'selected' : '' %>>Push</option>
+        </select>
+      </label>
+      <label>
+        Start Date
+        <input type="date" name="startDate" value="<%= filters.startDate %>">
+      </label>
+      <label>
+        End Date
+        <input type="date" name="endDate" value="<%= filters.endDate %>">
+      </label>
+      <div class="full filter-actions">
+        <button type="submit" class="btn btn-small">Apply Filters</button>
+        <a href="/bets/history" class="btn btn-secondary btn-small">Reset</a>
+      </div>
+    </form>
+  </section>
+
+  <section class="card history-table-card">
+    <div class="preview-subheader">
+      <strong>Saved bets</strong>
+      <span><%= bets.length %> rows in this view</span>
+    </div>
+
+    <% if (!bets.length) { %>
+      <div class="dashboard-empty-state history-empty-state">
+        <p class="muted">No bets match this filter set yet. Reset the filters or log a new wager.</p>
+        <a href="/bets/new" class="btn btn-small">Add Bet</a>
+      </div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Sport</th>
+              <th>Book</th>
+              <th>Type</th>
+              <th>Market</th>
+              <th>Odds</th>
+              <th>Stake</th>
+              <th>Result</th>
+              <th>P/L</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% bets.forEach((bet) => { %>
+              <tr>
+                <td><%= new Date(bet.bet_date).toISOString().slice(0,10) %></td>
+                <td><%= bet.sport %></td>
+                <td><%= bet.sportsbook || '-' %></td>
+                <td><%= bet.leg_count ? `${bet.bet_type} (${bet.leg_count} legs)` : bet.bet_type %></td>
+                <td class="history-market-cell">
+                  <div><%= bet.displayMarket %></div>
+                  <% if (bet.legs?.length) { %>
+                    <div class="history-leg-list">
+                      <% bet.legs.forEach((leg, index) => { %>
+                        <span><strong>Leg <%= index + 1 %>:</strong> <%= bet.isMultiSport && leg.sport ? `${leg.sport} - ` : '' %><%= leg.market %></span>
+                      <% }) %>
+                    </div>
+                  <% } %>
+                </td>
+                <td><%= bet.odds > 0 ? `+${bet.odds}` : bet.odds %></td>
+                <td>$<%= Number(bet.stake).toFixed(2) %></td>
+                <td>
+                  <span class="dashboard-result-pill dashboard-result-<%= bet.result %>"><%= bet.result %></span>
+                </td>
+                <td class="<%= bet.profit_loss >= 0 ? 'positive' : 'negative' %>">$<%= Number(bet.profit_loss).toFixed(2) %></td>
+                <td>
+                  <div class="history-actions">
+                    <a href="/bets/<%= bet.id %>/edit">Edit</a>
+                    <form method="POST" action="/bets/<%= bet.id %>/delete" class="inline-form" onsubmit="return confirm('Delete this bet?');">
+                      <button type="submit" class="link-btn danger">Delete</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
 </section>
 <%- include('../partials/footer') %>

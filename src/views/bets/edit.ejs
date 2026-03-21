@@ -1,53 +1,195 @@
 <%- include('../partials/header') %>
-<section class="card">
-  <h1>Edit Bet</h1>
-  <form method="POST" action="/bets/<%= bet.id %>/edit" class="form-grid two-col">
-    <label>Sport<input type="text" name="sport" value="<%= bet.sport %>" required /></label>
-    <label>
-      Bet Type
-      <select name="betTypeChoice" required data-bet-type-select>
-        <option value="">Select</option>
-        <option value="Spread" <%= betTypeForm.betTypeChoice === 'Spread' ? 'selected' : '' %>>Spread</option>
-        <option value="Moneyline" <%= betTypeForm.betTypeChoice === 'Moneyline' ? 'selected' : '' %>>Moneyline</option>
-        <option value="Total" <%= betTypeForm.betTypeChoice === 'Total' ? 'selected' : '' %>>Total</option>
-        <option value="Player Prop" <%= betTypeForm.betTypeChoice === 'Player Prop' ? 'selected' : '' %>>Player Prop</option>
-        <option value="Team Prop" <%= betTypeForm.betTypeChoice === 'Team Prop' ? 'selected' : '' %>>Team Prop</option>
-        <option value="Parlay" <%= betTypeForm.betTypeChoice === 'Parlay' ? 'selected' : '' %>>Parlay</option>
-        <option value="Same Game Parlay" <%= betTypeForm.betTypeChoice === 'Same Game Parlay' ? 'selected' : '' %>>Same Game Parlay</option>
-        <option value="Teaser" <%= betTypeForm.betTypeChoice === 'Teaser' ? 'selected' : '' %>>Teaser</option>
-        <option value="Round Robin" <%= betTypeForm.betTypeChoice === 'Round Robin' ? 'selected' : '' %>>Round Robin</option>
-        <option value="Future" <%= betTypeForm.betTypeChoice === 'Future' ? 'selected' : '' %>>Future</option>
-        <option value="Other" <%= betTypeForm.betTypeChoice === 'Other' ? 'selected' : '' %>>Other</option>
-      </select>
-    </label>
-    <label class="<%= betTypeForm.betTypeChoice === 'Other' ? '' : 'is-hidden' %>" data-custom-bet-type-field>
-      Custom Bet Type
-      <input type="text" name="customBetType" value="<%= betTypeForm.customBetType %>" <%= betTypeForm.betTypeChoice === 'Other' ? '' : 'disabled' %> />
-    </label>
-    <label class="<%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(betTypeForm.betTypeChoice) ? '' : 'is-hidden' %>" data-leg-count-field>
-      Number of Legs
-      <input type="number" name="legCount" min="2" step="1" value="<%= betTypeForm.legCount || '' %>" <%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(betTypeForm.betTypeChoice) ? '' : 'disabled' %> />
-    </label>
-    <label class="full">Market<input type="text" name="market" value="<%= bet.market %>" required /></label>
-    <label>Odds<input type="number" step="1" name="odds" value="<%= bet.odds %>" required /></label>
-    <label>Stake<input type="number" step="0.01" name="stake" value="<%= bet.stake %>" required /></label>
-    <label>Result
-      <select name="result" required>
-        <option value="win" <%= bet.result === 'win' ? 'selected' : '' %>>Win</option>
-        <option value="loss" <%= bet.result === 'loss' ? 'selected' : '' %>>Loss</option>
-        <option value="push" <%= bet.result === 'push' ? 'selected' : '' %>>Push</option>
-      </select>
-    </label>
-    <label>Bet Date<input type="date" name="betDate" value="<%= new Date(bet.bet_date).toISOString().slice(0,10) %>" required /></label>
-    <label class="full">Notes<textarea name="notes" rows="3"><%= bet.notes || '' %></textarea></label>
-    <button class="btn full" type="submit">Update Bet</button>
-  </form>
+<section class="bet-entry-shell">
+  <section class="bet-entry-layout">
+    <section class="card bet-entry-card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Edit Wager</p>
+          <h2>Update your saved bet</h2>
+          <p class="muted">Make changes to the ticket details, leg structure, or grading.</p>
+        </div>
+      </div>
+
+      <form method="POST" action="/bets/<%= bet.id %>/edit" class="form-grid two-col bet-entry-form">
+        <section class="bet-entry-group full">
+          <div class="bet-entry-group-header">
+            <span class="section-label">Bet details</span>
+            <strong>What did you bet?</strong>
+          </div>
+          <div class="form-grid two-col">
+            <label>
+              <span>Sport</span>
+              <input type="text" name="sport" value="<%= isMultiSport ? multiSportLabel : bet.sport %>" required data-sport-input <%= isMultiSport ? 'disabled' : '' %> />
+            </label>
+            <section class="bet-entry-group-subtle <%= isMultiSport ? '' : 'is-hidden' %>" data-multi-sport-banner>
+              <span class="section-label">Sport</span>
+              <strong><%= multiSportLabel %></strong>
+              <span class="muted">This ticket is tracked as multi-sport because each leg can carry its own sport.</span>
+            </section>
+            <label>
+              <span>Sportsbook</span>
+              <input type="text" name="sportsbook" value="<%= bet.sportsbook || '' %>" placeholder="DraftKings" />
+            </label>
+            <label>
+              <span>Bet Type</span>
+              <select name="betTypeChoice" required data-bet-type-select>
+                <option value="">Select</option>
+                <option value="Spread" <%= betTypeForm.betTypeChoice === 'Spread' ? 'selected' : '' %>>Spread</option>
+                <option value="Moneyline" <%= betTypeForm.betTypeChoice === 'Moneyline' ? 'selected' : '' %>>Moneyline</option>
+                <option value="Total" <%= betTypeForm.betTypeChoice === 'Total' ? 'selected' : '' %>>Total</option>
+                <option value="Player Prop" <%= betTypeForm.betTypeChoice === 'Player Prop' ? 'selected' : '' %>>Player Prop</option>
+                <option value="Team Prop" <%= betTypeForm.betTypeChoice === 'Team Prop' ? 'selected' : '' %>>Team Prop</option>
+                <option value="Parlay" <%= betTypeForm.betTypeChoice === 'Parlay' ? 'selected' : '' %>>Parlay</option>
+                <option value="Same Game Parlay" <%= betTypeForm.betTypeChoice === 'Same Game Parlay' ? 'selected' : '' %>>Same Game Parlay</option>
+                <option value="Teaser" <%= betTypeForm.betTypeChoice === 'Teaser' ? 'selected' : '' %>>Teaser</option>
+                <option value="Round Robin" <%= betTypeForm.betTypeChoice === 'Round Robin' ? 'selected' : '' %>>Round Robin</option>
+                <option value="Future" <%= betTypeForm.betTypeChoice === 'Future' ? 'selected' : '' %>>Future</option>
+                <option value="Other" <%= betTypeForm.betTypeChoice === 'Other' ? 'selected' : '' %>>Other</option>
+              </select>
+            </label>
+            <label class="<%= betTypeForm.betTypeChoice === 'Other' ? '' : 'is-hidden' %>" data-custom-bet-type-field>
+              <span>Custom Bet Type</span>
+              <input type="text" name="customBetType" value="<%= betTypeForm.customBetType %>" <%= betTypeForm.betTypeChoice === 'Other' ? '' : 'disabled' %> />
+            </label>
+            <label class="<%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(betTypeForm.betTypeChoice) ? '' : 'is-hidden' %>" data-leg-count-field>
+              <span>Number of Legs</span>
+              <input type="number" name="legCount" min="2" step="1" value="<%= betTypeForm.legCount || '' %>" <%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(betTypeForm.betTypeChoice) ? '' : 'disabled' %> />
+            </label>
+            <label class="<%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(betTypeForm.betTypeChoice) ? '' : 'is-hidden' %>" data-multi-sport-toggle-field>
+              <span>Ticket Type</span>
+              <select name="isMultiSport" data-multi-sport-toggle <%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(betTypeForm.betTypeChoice) ? '' : 'disabled' %>>
+                <option value="false" <%= isMultiSport ? '' : 'selected' %>>Single Sport</option>
+                <option value="true" <%= isMultiSport ? 'selected' : '' %>>Multi-Sport</option>
+              </select>
+            </label>
+            <section class="<%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(betTypeForm.betTypeChoice) ? '' : 'is-hidden' %> full" data-leg-builder>
+              <div class="bet-entry-group-subtle">
+                <span class="section-label">Leg Builder</span>
+                <strong>Update each leg on the ticket</strong>
+                <span class="muted">Use one row per leg so the ticket stays readable in history and exports.</span>
+              </div>
+              <div class="bet-leg-list" data-leg-list data-saved-legs='<%- JSON.stringify(legEntries || []) %>'></div>
+            </section>
+            <label class="full">
+              <span>Market</span>
+              <input type="text" name="market" value="<%= bet.market %>" required data-market-input <%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(betTypeForm.betTypeChoice) ? 'disabled' : '' %> />
+              <small class="field-hint" data-market-hint><%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(betTypeForm.betTypeChoice) ? 'Your market summary will be built automatically from the legs below.' : 'Edit the market exactly as you want it to appear later.' %></small>
+            </label>
+          </div>
+        </section>
+
+        <section class="bet-entry-group full">
+          <div class="bet-entry-group-header">
+            <span class="section-label">Stake and grading</span>
+            <strong>How much did you risk and how did it finish?</strong>
+          </div>
+          <div class="form-grid two-col">
+            <label>
+              <span>Odds</span>
+              <input type="number" step="1" name="odds" value="<%= bet.odds %>" required />
+            </label>
+            <label>
+              <span>Stake</span>
+              <input type="number" step="0.01" name="stake" value="<%= bet.stake %>" required />
+            </label>
+            <label>
+              <span>Result</span>
+              <select name="result" required>
+                <option value="win" <%= bet.result === 'win' ? 'selected' : '' %>>Win</option>
+                <option value="loss" <%= bet.result === 'loss' ? 'selected' : '' %>>Loss</option>
+                <option value="push" <%= bet.result === 'push' ? 'selected' : '' %>>Push</option>
+              </select>
+            </label>
+            <label>
+              <span>Bet Date</span>
+              <input type="date" name="betDate" value="<%= new Date(bet.bet_date).toISOString().slice(0,10) %>" required />
+            </label>
+          </div>
+        </section>
+
+        <section class="bet-entry-group full">
+          <div class="bet-entry-group-header">
+            <span class="section-label">Notes</span>
+            <strong>Anything worth remembering?</strong>
+          </div>
+          <label class="full">
+            <textarea name="notes" rows="3"><%= bet.notes || '' %></textarea>
+          </label>
+        </section>
+
+        <div class="bet-entry-actions full">
+          <button class="btn bet-entry-primary-action" type="submit">Update Bet</button>
+          <a href="/bets/history" class="btn btn-secondary bet-entry-secondary-action">Back to history</a>
+        </div>
+      </form>
+    </section>
+  </section>
 </section>
 <script>
   const betTypeSelect = document.querySelector('[data-bet-type-select]');
   const customBetTypeField = document.querySelector('[data-custom-bet-type-field]');
   const legCountField = document.querySelector('[data-leg-count-field]');
+  const multiSportToggleField = document.querySelector('[data-multi-sport-toggle-field]');
+  const multiSportToggle = document.querySelector('[data-multi-sport-toggle]');
+  const sportInput = document.querySelector('[data-sport-input]');
+  const multiSportBanner = document.querySelector('[data-multi-sport-banner]');
+  const legBuilder = document.querySelector('[data-leg-builder]');
+  const legList = document.querySelector('[data-leg-list]');
+  const marketInput = document.querySelector('[data-market-input]');
+  const marketHint = document.querySelector('[data-market-hint]');
   const legCountTypes = new Set(['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin']);
+  const savedLegEntries = JSON.parse(legList?.dataset.savedLegs || '[]');
+
+  const collectCurrentLegEntries = () => {
+    if (!legList) return [];
+
+    const sportValues = Array.from(legList.querySelectorAll('input[name="legSports"]')).map((input) => input.value || '');
+    const marketValues = Array.from(legList.querySelectorAll('input[name="legMarkets"]')).map((input) => input.value || '');
+    const currentCount = Math.max(sportValues.length, marketValues.length);
+
+    return Array.from({ length: currentCount }, (_, index) => ({
+      sport: sportValues[index] || '',
+      market: marketValues[index] || '',
+    }));
+  };
+
+  const renderLegInputs = () => {
+    if (!legList || !betTypeSelect) return;
+
+    const currentEntries = collectCurrentLegEntries();
+    const legCount = Number(legCountField?.querySelector('input')?.value || 0);
+    const isLegType = legCountTypes.has(betTypeSelect.value);
+    const isMultiSport = multiSportToggle?.value === 'true';
+
+    if (!isLegType || legCount < 2) {
+      legList.innerHTML = '';
+      return;
+    }
+
+    legList.innerHTML = Array.from({ length: legCount }, (_, index) => {
+      const savedEntry = currentEntries[index] || savedLegEntries[index] || {};
+      const savedSport = savedEntry.sport || '';
+      const savedMarket = savedEntry.market || '';
+
+      return `
+        <article class="bet-leg-card">
+          <div class="bet-leg-card-header">
+            <strong>Leg ${index + 1}</strong>
+          </div>
+          ${isMultiSport ? `
+            <label>
+              <span>Sport</span>
+              <input type="text" name="legSports" value="${savedSport.replace(/"/g, '&quot;')}" placeholder="NBA, NHL, UFC" />
+            </label>
+          ` : ''}
+          <label>
+            <span>Leg Description</span>
+            <input type="text" name="legMarkets" value="${savedMarket.replace(/"/g, '&quot;')}" placeholder="Celtics -4.5" />
+          </label>
+        </article>
+      `;
+    }).join('');
+  };
 
   const syncBetTypeFields = () => {
     if (!betTypeSelect) return;
@@ -55,6 +197,7 @@
     const selectedValue = betTypeSelect.value;
     const customInput = customBetTypeField?.querySelector('input');
     const legCountInput = legCountField?.querySelector('input');
+    const showLegType = legCountTypes.has(selectedValue);
 
     if (customBetTypeField) {
       const showCustom = selectedValue === 'Other';
@@ -67,19 +210,63 @@
     }
 
     if (legCountField) {
-      const showLegCount = legCountTypes.has(selectedValue);
-      legCountField.classList.toggle('is-hidden', !showLegCount);
+      legCountField.classList.toggle('is-hidden', !showLegType);
       if (legCountInput) {
-        legCountInput.required = showLegCount;
-        legCountInput.disabled = !showLegCount;
-        if (!showLegCount) legCountInput.value = '';
+        legCountInput.required = showLegType;
+        legCountInput.disabled = !showLegType;
+        if (!showLegType) legCountInput.value = '';
       }
     }
+
+    if (multiSportToggleField) {
+      multiSportToggleField.classList.toggle('is-hidden', !showLegType);
+      if (multiSportToggle) {
+        multiSportToggle.disabled = !showLegType;
+        if (!showLegType) {
+          multiSportToggle.value = 'false';
+        }
+      }
+    }
+
+    if (legBuilder) {
+      legBuilder.classList.toggle('is-hidden', !showLegType);
+    }
+
+    const isMultiSport = showLegType && multiSportToggle?.value === 'true';
+    if (multiSportBanner) {
+      multiSportBanner.classList.toggle('is-hidden', !isMultiSport);
+    }
+    if (sportInput) {
+      sportInput.disabled = isMultiSport;
+      sportInput.required = !isMultiSport;
+      if (isMultiSport) {
+        sportInput.value = '<%= multiSportLabel %>';
+      } else if (sportInput.value === '<%= multiSportLabel %>') {
+        sportInput.value = '';
+      }
+    }
+
+    if (marketInput) {
+      marketInput.disabled = showLegType;
+      marketInput.required = !showLegType;
+    }
+
+    if (marketHint) {
+      marketHint.textContent = showLegType
+        ? 'Your market summary will be built automatically from the legs below.'
+        : 'Edit the market exactly as you want it to appear later.';
+    }
+
+    renderLegInputs();
   };
 
   if (betTypeSelect) {
     betTypeSelect.addEventListener('change', syncBetTypeFields);
     syncBetTypeFields();
   }
+
+  multiSportToggle?.addEventListener('change', syncBetTypeFields);
+  legCountField?.querySelector('input')?.addEventListener('input', renderLegInputs);
+  legCountField?.querySelector('input')?.addEventListener('blur', renderLegInputs);
 </script>
 <%- include('../partials/footer') %>

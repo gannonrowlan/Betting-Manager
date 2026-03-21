@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS bets (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   sport VARCHAR(80) NOT NULL,
+  sportsbook VARCHAR(120) NULL,
   bet_type VARCHAR(80) NOT NULL,
   leg_count INT NULL,
   market VARCHAR(255) NOT NULL,
@@ -35,4 +36,27 @@ CREATE TABLE IF NOT EXISTS bankroll_profiles (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_bankroll_profiles_users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS saved_bet_options (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  option_type ENUM('sport', 'sportsbook', 'bet_type') NOT NULL,
+  option_value VARCHAR(120) NOT NULL,
+  last_used_at TIMESTAMP NULL DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_saved_bet_options_user_type_value (user_id, option_type, option_value),
+  CONSTRAINT fk_saved_bet_options_users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS bet_legs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  bet_id INT NOT NULL,
+  sport VARCHAR(80) NULL,
+  market VARCHAR(255) NOT NULL,
+  leg_order INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_bet_legs_bets FOREIGN KEY (bet_id) REFERENCES bets(id) ON DELETE CASCADE
 );

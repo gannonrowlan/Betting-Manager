@@ -179,6 +179,26 @@
             <p class="muted"><%= highlights.toughestSport.totalBets %> bets · <%= highlights.toughestSport.roi %>% ROI · <%= highlights.toughestSport.units %>u</p>
           <% } %>
         </article>
+        <article class="card insight-card">
+          <p class="eyebrow">Best Sportsbook</p>
+          <% if (!highlights.bestSportsbook) { %>
+            <p class="muted">Add sportsbook data on new bets to compare books here.</p>
+          <% } else { %>
+            <h3><%= highlights.bestSportsbook.key %></h3>
+            <p class="insight-number <%= highlights.bestSportsbook.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(highlights.bestSportsbook.netProfit).toFixed(2) %></p>
+            <p class="muted"><%= highlights.bestSportsbook.totalBets %> bets · <%= highlights.bestSportsbook.roi %>% ROI · <%= highlights.bestSportsbook.units %>u</p>
+          <% } %>
+        </article>
+        <article class="card insight-card">
+          <p class="eyebrow">Toughest Sportsbook</p>
+          <% if (!highlights.toughestSportsbook) { %>
+            <p class="muted">Track a few books to spot where your value drops off.</p>
+          <% } else { %>
+            <h3><%= highlights.toughestSportsbook.key %></h3>
+            <p class="insight-number <%= highlights.toughestSportsbook.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(highlights.toughestSportsbook.netProfit).toFixed(2) %></p>
+            <p class="muted"><%= highlights.toughestSportsbook.totalBets %> bets · <%= highlights.toughestSportsbook.roi %>% ROI · <%= highlights.toughestSportsbook.units %>u</p>
+          <% } %>
+        </article>
       </section>
     </aside>
   </section>
@@ -196,10 +216,18 @@
         <% recentBets.forEach((bet) => { %>
           <article class="dashboard-bet-row">
             <div class="dashboard-bet-main">
-              <strong><%= bet.sport %> - <%= bet.bet_type %></strong>
-              <span><%= bet.market %></span>
+              <strong><%= bet.sport %> - <%= bet.leg_count ? `${bet.bet_type} (${bet.leg_count} legs)` : bet.bet_type %></strong>
+              <span><%= bet.displayMarket || bet.market %></span>
+              <% if (bet.legs?.length) { %>
+                <div class="dashboard-leg-list">
+                  <% bet.legs.forEach((leg, index) => { %>
+                    <span><strong>Leg <%= index + 1 %>:</strong> <%= bet.isMultiSport && leg.sport ? `${leg.sport} - ` : '' %><%= leg.market %></span>
+                  <% }) %>
+                </div>
+              <% } %>
             </div>
             <div class="dashboard-bet-meta">
+              <span><%= bet.sportsbook || 'No book' %></span>
               <span><%= new Date(bet.bet_date).toISOString().slice(0, 10) %></span>
               <span><%= Number(bet.stake).toFixed(2) %> stake</span>
               <span class="dashboard-result-pill dashboard-result-<%= bet.result %>"><%= bet.result %></span>

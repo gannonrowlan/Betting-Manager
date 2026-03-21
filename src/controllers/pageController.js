@@ -68,6 +68,10 @@ function getBestAndWorstGroup(groups = []) {
   };
 }
 
+function getTopGroup(groups = []) {
+  return groups.length ? groups[0] : null;
+}
+
 function formatDashboardDate(date) {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
@@ -143,6 +147,65 @@ function getTrendInsights(trendSeries = []) {
   };
 }
 
+async function getBetLegsByBetIds(userId, betIds = []) {
+  if (!betIds.length) {
+    return new Map();
+  }
+
+  const placeholders = betIds.map(() => '?').join(', ');
+  const [rows] = await pool.query(
+    `SELECT bet_legs.bet_id, bet_legs.sport, bet_legs.market, bet_legs.leg_order
+      FROM bet_legs
+      INNER JOIN bets ON bets.id = bet_legs.bet_id
+      WHERE bets.user_id = ?
+        AND bet_legs.bet_id IN (${placeholders})
+      ORDER BY bet_legs.bet_id ASC, bet_legs.leg_order ASC`,
+    [userId, ...betIds]
+  );
+
+  return rows.reduce((map, row) => {
+    if (!map.has(row.bet_id)) {
+      map.set(row.bet_id, []);
+    }
+
+    map.get(row.bet_id).push({
+      sport: row.sport || '',
+      market: row.market,
+      legOrder: row.leg_order,
+    });
+
+    return map;
+  }, new Map());
+}
+
+function hasMultipleSports(legs = []) {
+  const sports = legs
+    .map((leg) => String(leg.sport || '').trim().toLowerCase())
+    .filter(Boolean);
+
+  return new Set(sports).size > 1;
+}
+
+function summarizeLegs(legs = [], isMultiSport = false) {
+  return legs
+    .map((leg, index) => {
+      const market = String(leg.market || '').trim();
+      const sport = String(leg.sport || '').trim();
+
+      if (!market) {
+        return '';
+      }
+
+      if (isMultiSport && sport) {
+        return `Leg ${index + 1}: ${sport} - ${market}`;
+      }
+
+      return `Leg ${index + 1}: ${market}`;
+    })
+    .filter(Boolean)
+    .join(' | ');
+}
+
 async function renderDashboard(req, res) {
   const userId = req.session.user.id;
   const filters = normalizeDashboardFilters(req.query);
@@ -168,7 +231,20 @@ async function renderDashboard(req, res) {
     return true;
   });
 
-  const recentBets = filteredBets.slice(0, 5);
+  const legsByBetId = await getBetLegsByBetIds(userId, filteredBets.map((bet) => bet.id));
+  const hydratedBets = filteredBets.map((bet) => {
+    const legs = legsByBetId.get(bet.id) || [];
+    const isMultiSport = bet.sport === 'Multi-Sport' || hasMultipleSports(legs);
+
+    return {
+      ...bet,
+      legs,
+      displayMarket: legs.length ? summarizeLegs(legs, isMultiSport) : bet.market,
+      isMultiSport,
+    };
+  });
+
+  const recentBets = hydratedBets.slice(0, 5);
   const profile = await getOrCreateProfile(userId);
   const stats = summarizeBets(filteredBets, profile.unitSize);
   const overallStats = summarizeBets(allBets, profile.unitSize);
@@ -189,7 +265,13 @@ async function renderDashboard(req, res) {
   }
 
   const sportGroups = groupPerformance(filteredBets, 'sport', profile.unitSize);
+  const sportsbookGroups = groupPerformance(
+    filteredBets.filter((bet) => (bet.sportsbook || '').trim()),
+    'sportsbook',
+    profile.unitSize
+  );
   const { best, worst } = getBestAndWorstGroup(sportGroups);
+  const { best: bestSportsbook, worst: toughestSportsbook } = getBestAndWorstGroup(sportsbookGroups);
   const trendSeries = buildTrendSeries(filteredBets, profile.startingBankroll);
   const trendInsights = getTrendInsights(trendSeries);
 
@@ -219,6 +301,8 @@ async function renderDashboard(req, res) {
     highlights: {
       bestSport: best,
       toughestSport: worst,
+      bestSportsbook,
+      toughestSportsbook,
     },
     recentBets,
     trendSeries,
@@ -269,18 +353,34 @@ async function renderStats(req, res) {
     [userId]
   );
 
+  const summary = summarizeBets(bets, profile.unitSize);
   const sportStats = groupPerformance(bets, 'sport', profile.unitSize);
+  const sportsbookStats = groupPerformance(
+    bets.filter((bet) => (bet.sportsbook || '').trim()),
+    'sportsbook',
+    profile.unitSize
+  );
   const betTypeStats = groupPerformance(bets, 'bet_type', profile.unitSize).map((row) => ({
     ...row,
     betType: row.key,
   }));
   const monthlyRecap = buildMonthlyRecap(bets, profile.unitSize);
+  const topSport = getTopGroup(sportStats);
+  const topSportsbook = getTopGroup(sportsbookStats);
+  const topBetType = getTopGroup(betTypeStats);
 
   return res.render('stats', {
     title: 'Stats',
+    summary,
     sportStats,
+    sportsbookStats,
     betTypeStats,
     monthlyRecap,
+    highlights: {
+      topSport,
+      topSportsbook,
+      topBetType,
+    },
   });
 }
 

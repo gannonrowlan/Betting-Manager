@@ -20,54 +20,135 @@
           <div class="form-grid two-col">
             <label>
               <span>Sport</span>
-              <input type="text" name="sport" list="sport-options" required autofocus placeholder="NBA, NFL, UFC" value="<%= formData?.sport || '' %>" />
+              <input
+                type="text"
+                name="sport"
+                list="sport-options"
+                required
+                autofocus
+                placeholder="NBA, NFL, UFC"
+                value="<%= formData?.sport || '' %>"
+                data-save-option-input="sport"
+                data-sport-input
+                <%= formData?.isMultiSport ? 'disabled' : '' %>
+              />
               <datalist id="sport-options">
-                <option value="NBA"></option>
-                <option value="NFL"></option>
-                <option value="NCAAB"></option>
-                <option value="NCAAF"></option>
-                <option value="MLB"></option>
-                <option value="NHL"></option>
-                <option value="UFC"></option>
-                <option value="Boxing"></option>
-                <option value="Soccer"></option>
-                <option value="Tennis"></option>
-                <option value="Golf"></option>
-                <option value="WNBA"></option>
+                <% sportOptions.forEach((sportOption) => { %>
+                  <option value="<%= sportOption %>"></option>
+                <% }) %>
               </datalist>
-            <small class="field-hint">Pick a consistent sport label so your tracking stays clean.</small>
-          </label>
-          <label>
-            <span>Bet Type</span>
-            <select name="betTypeChoice" required data-bet-type-select>
-              <option value="">Select</option>
-              <option value="Spread" <%= formData?.betTypeChoice === 'Spread' ? 'selected' : '' %>>Spread</option>
-              <option value="Moneyline" <%= formData?.betTypeChoice === 'Moneyline' ? 'selected' : '' %>>Moneyline</option>
-              <option value="Total" <%= formData?.betTypeChoice === 'Total' ? 'selected' : '' %>>Total</option>
-              <option value="Player Prop" <%= formData?.betTypeChoice === 'Player Prop' ? 'selected' : '' %>>Player Prop</option>
-              <option value="Team Prop" <%= formData?.betTypeChoice === 'Team Prop' ? 'selected' : '' %>>Team Prop</option>
-              <option value="Parlay" <%= formData?.betTypeChoice === 'Parlay' ? 'selected' : '' %>>Parlay</option>
-              <option value="Same Game Parlay" <%= formData?.betTypeChoice === 'Same Game Parlay' ? 'selected' : '' %>>Same Game Parlay</option>
-              <option value="Teaser" <%= formData?.betTypeChoice === 'Teaser' ? 'selected' : '' %>>Teaser</option>
-              <option value="Round Robin" <%= formData?.betTypeChoice === 'Round Robin' ? 'selected' : '' %>>Round Robin</option>
-              <option value="Future" <%= formData?.betTypeChoice === 'Future' ? 'selected' : '' %>>Future</option>
-              <option value="Other" <%= formData?.betTypeChoice === 'Other' ? 'selected' : '' %>>Other</option>
-            </select>
-            <small class="field-hint">Use a base bet type so your stats stay consistent.</small>
-          </label>
-          <label class="<%= formData?.betTypeChoice === 'Other' ? '' : 'is-hidden' %>" data-custom-bet-type-field>
-            <span>Custom Bet Type</span>
-            <input type="text" name="customBetType" value="<%= formData?.customBetType || '' %>" placeholder="Alt Spread, Ladder, Draw No Bet" <%= formData?.betTypeChoice === 'Other' ? '' : 'disabled' %> />
-          </label>
-          <label class="<%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(formData?.betTypeChoice) ? '' : 'is-hidden' %>" data-leg-count-field>
-            <span>Number of Legs</span>
-            <input type="number" name="legCount" min="2" step="1" value="<%= formData?.legCount || '' %>" placeholder="2" <%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(formData?.betTypeChoice) ? '' : 'disabled' %> />
-            <small class="field-hint">Only needed for multi-leg bet types.</small>
-          </label>
-          <label class="full">
-            <span>Market</span>
-            <input type="text" name="market" required placeholder="Celtics -4.5, Under 146.5, Rangers ML" value="<%= formData?.market || '' %>" />
-          </label>
+              <small class="field-hint">Pick a consistent sport label so your tracking stays clean.</small>
+              <div class="save-option-toggle is-hidden" data-save-option-row="sport">
+                <input type="checkbox" name="saveSportOption" value="1" <%= formData?.saveSportOption ? 'checked' : '' %> data-save-option-checkbox="sport" />
+                <span>Save this sport to your list for later.</span>
+              </div>
+            </label>
+            <section class="bet-entry-group-subtle is-hidden" data-multi-sport-banner>
+              <span class="section-label">Sport</span>
+              <strong><%= multiSportLabel %></strong>
+              <span class="muted">This ticket will be tracked as multi-sport because each leg can carry its own sport.</span>
+            </section>
+            <label>
+              <span>Sportsbook</span>
+              <input
+                type="text"
+                name="sportsbook"
+                list="sportsbook-options"
+                placeholder="DraftKings"
+                value="<%= formData?.sportsbook || '' %>"
+                data-save-option-input="sportsbook"
+              />
+              <datalist id="sportsbook-options">
+                <% sportsbookOptions.forEach((sportsbookOption) => { %>
+                  <option value="<%= sportsbookOption %>"></option>
+                <% }) %>
+              </datalist>
+              <small class="field-hint">Optional, but helpful later when you want to review results by book.</small>
+              <div class="save-option-toggle is-hidden" data-save-option-row="sportsbook">
+                <input type="checkbox" name="saveSportsbookOption" value="1" <%= formData?.saveSportsbookOption ? 'checked' : '' %> data-save-option-checkbox="sportsbook" />
+                <span>Save this sportsbook to your list for later.</span>
+              </div>
+            </label>
+            <label>
+              <span>Bet Type</span>
+              <select name="betTypeChoice" required data-bet-type-select>
+                <option value="">Select</option>
+                <% betTypeOptions.forEach((betTypeOption) => { %>
+                  <option value="<%= betTypeOption %>" <%= formData?.betTypeChoice === betTypeOption ? 'selected' : '' %>><%= betTypeOption %></option>
+                <% }) %>
+                <option value="Other" <%= formData?.betTypeChoice === 'Other' ? 'selected' : '' %>>Other</option>
+              </select>
+              <small class="field-hint">Use a base bet type so your stats stay consistent.</small>
+            </label>
+            <label class="<%= formData?.betTypeChoice === 'Other' ? '' : 'is-hidden' %>" data-custom-bet-type-field>
+              <span>Custom Bet Type</span>
+              <input type="text" name="customBetType" value="<%= formData?.customBetType || '' %>" placeholder="Alt Spread, Ladder, Draw No Bet" <%= formData?.betTypeChoice === 'Other' ? '' : 'disabled' %> data-save-option-input="bet-type" />
+              <div class="save-option-toggle is-hidden" data-save-option-row="bet-type">
+                <input type="checkbox" name="saveBetTypeOption" value="1" <%= formData?.saveBetTypeOption ? 'checked' : '' %> data-save-option-checkbox="bet-type" />
+                <span>Save this bet type to your list for later.</span>
+              </div>
+            </label>
+            <label class="<%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(formData?.betTypeChoice) ? '' : 'is-hidden' %>" data-leg-count-field>
+              <span>Number of Legs</span>
+              <input type="number" name="legCount" min="2" step="1" value="<%= formData?.legCount || '' %>" <%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(formData?.betTypeChoice) ? '' : 'disabled' %> />
+              <small class="field-hint">Only needed for multi-leg bet types.</small>
+            </label>
+            <label class="<%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(formData?.betTypeChoice) ? '' : 'is-hidden' %>" data-multi-sport-toggle-field>
+              <span>Ticket Type</span>
+              <select name="isMultiSport" data-multi-sport-toggle <%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(formData?.betTypeChoice) ? '' : 'disabled' %>>
+                <option value="false" <%= formData?.isMultiSport ? '' : 'selected' %>>Single Sport</option>
+                <option value="true" <%= formData?.isMultiSport ? 'selected' : '' %>>Multi-Sport</option>
+              </select>
+              <small class="field-hint">Choose multi-sport if the legs come from different sports.</small>
+            </label>
+            <section class="<%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(formData?.betTypeChoice) ? '' : 'is-hidden' %> full" data-leg-builder>
+              <div class="bet-entry-group-subtle">
+                <span class="section-label">Leg Builder</span>
+                <strong data-leg-builder-title>Enter each leg on the ticket</strong>
+                <span class="muted">Use one box per leg so the ticket stays readable everywhere in the app.</span>
+              </div>
+              <section class="bet-ticket-summary" data-ticket-summary aria-live="polite">
+                <div class="bet-ticket-summary-header">
+                  <span class="section-label">Ticket Summary</span>
+                  <strong data-ticket-summary-title>Waiting for leg details</strong>
+                </div>
+                <div class="bet-ticket-summary-grid">
+                  <div>
+                    <span>Ticket Sport</span>
+                    <strong data-ticket-sport><%= formData?.isMultiSport ? multiSportLabel : (formData?.sport || 'Not set') %></strong>
+                  </div>
+                  <div>
+                    <span>Legs</span>
+                    <strong data-ticket-leg-count><%= formData?.legCount || '0' %></strong>
+                  </div>
+                  <div class="full">
+                    <span>Auto Summary</span>
+                    <strong data-ticket-market-summary><%= formData?.market || 'Your leg summary will appear here.' %></strong>
+                  </div>
+                </div>
+              </section>
+              <div class="bet-leg-list" data-leg-list data-saved-legs='<%- JSON.stringify(formData?.legEntries || []) %>'></div>
+            </section>
+            <label class="full" data-market-field>
+              <span>Market</span>
+              <input
+                type="text"
+                name="market"
+                required
+                placeholder="Celtics -4.5"
+                value="<%= formData?.market || '' %>"
+                data-market-input
+                aria-describedby="market-hint market-error"
+                <%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(formData?.betTypeChoice) ? 'disabled' : '' %>
+              />
+              <small class="field-hint" id="market-hint" data-market-hint><%= ['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin'].includes(formData?.betTypeChoice) ? 'Your market summary will be built automatically from the legs below.' : 'Enter the team followed by the spread, like Celtics -4.5.' %></small>
+              <small class="field-error" id="market-error" data-market-error aria-live="polite"></small>
+            </label>
+            <section class="bet-duplicate-warning is-hidden full" data-duplicate-warning aria-live="polite">
+              <span class="section-label">Possible Duplicate</span>
+              <strong data-duplicate-title>Similar bet already logged</strong>
+              <span data-duplicate-copy>Review your recent bets before saving this one again.</span>
+            </section>
           </div>
         </section>
 
@@ -79,17 +160,17 @@
           <div class="form-grid two-col">
             <label>
               <span>Odds</span>
-              <input type="number" step="1" name="odds" required placeholder="-110 or +150" value="<%= formData?.odds || '' %>" />
+              <input type="number" step="1" name="odds" required placeholder="-110 or +150" value="<%= formData?.odds || '' %>" data-odds-input />
               <small class="field-hint">Use American odds, negative or positive.</small>
             </label>
             <label>
               <span>Stake ($)</span>
-              <input type="number" step="0.01" min="0.01" name="stake" required placeholder="25.00" value="<%= formData?.stake || '' %>" />
+              <input type="number" step="0.01" min="0.01" name="stake" required placeholder="25.00" value="<%= formData?.stake || '' %>" data-stake-input />
               <small class="field-hint">Enter the amount you actually risked.</small>
             </label>
             <label>
               <span>Result</span>
-              <select name="result" required>
+              <select name="result" required data-result-input>
                 <option value="">Select</option>
                 <option value="win" <%= formData?.result === 'win' ? 'selected' : '' %>>Win</option>
                 <option value="loss" <%= formData?.result === 'loss' ? 'selected' : '' %>>Loss</option>
@@ -98,8 +179,32 @@
             </label>
             <label>
               <span>Bet Date</span>
-              <input type="date" name="betDate" required value="<%= formData?.betDate || '' %>" />
+              <input type="date" name="betDate" required value="<%= formData?.betDate || defaultBetDate %>" />
             </label>
+            <section class="bet-preview-card full" aria-live="polite" data-payout-preview>
+              <div class="bet-preview-header">
+                <span class="section-label">Payout Preview</span>
+                <strong data-preview-status>Waiting for odds and stake</strong>
+              </div>
+              <div class="bet-preview-grid">
+                <div>
+                  <span>Risk</span>
+                  <strong data-preview-risk>$0.00</strong>
+                </div>
+                <div>
+                  <span>To win</span>
+                  <strong data-preview-win>$0.00</strong>
+                </div>
+                <div>
+                  <span>Total return</span>
+                  <strong data-preview-return>$0.00</strong>
+                </div>
+                <div>
+                  <span>Graded result</span>
+                  <strong data-preview-graded>$0.00</strong>
+                </div>
+              </div>
+            </section>
           </div>
         </section>
 
@@ -114,8 +219,9 @@
         </section>
 
         <div class="bet-entry-actions full">
-          <button class="btn" type="submit" data-submit-button data-pending-label="Saving bet...">Save Bet</button>
-          <a href="/bets/history" class="btn btn-secondary">Back to history</a>
+          <button class="btn bet-entry-primary-action" type="submit" name="submitAction" value="save" data-submit-button data-pending-label="Saving bet...">Save Bet</button>
+          <button class="btn btn-secondary bet-entry-tertiary-action" type="submit" name="submitAction" value="save-add-another" data-submit-button data-pending-label="Saving and resetting...">Save & Add Another</button>
+          <a href="/bets/history" class="btn btn-secondary bet-entry-secondary-action">Back to history</a>
         </div>
       </form>
     </section>
@@ -155,22 +261,452 @@
 
 <script>
   const betForm = document.querySelector('[data-bet-form]');
-
-  if (betForm) {
-    betForm.addEventListener('submit', () => {
-      const submitButton = betForm.querySelector('[data-submit-button]');
-      if (!submitButton) return;
-
-      submitButton.disabled = true;
-      submitButton.textContent = submitButton.dataset.pendingLabel || 'Submitting...';
-    });
-  }
-
+  const knownSportOptions = <%- JSON.stringify(sportOptions) %>;
+  const knownSportsbookOptions = <%- JSON.stringify(sportsbookOptions) %>;
+  const knownBetTypeOptions = <%- JSON.stringify(betTypeOptions) %>;
+  const duplicateCandidates = <%- JSON.stringify(duplicateCandidates || []) %>;
   const betTypeSelect = document.querySelector('[data-bet-type-select]');
   const customBetTypeField = document.querySelector('[data-custom-bet-type-field]');
   const legCountField = document.querySelector('[data-leg-count-field]');
-
+  const multiSportToggleField = document.querySelector('[data-multi-sport-toggle-field]');
+  const multiSportToggle = document.querySelector('[data-multi-sport-toggle]');
+  const sportInput = document.querySelector('[data-sport-input]');
+  const multiSportBanner = document.querySelector('[data-multi-sport-banner]');
+  const legBuilder = document.querySelector('[data-leg-builder]');
+  const legList = document.querySelector('[data-leg-list]');
+  const ticketSummary = document.querySelector('[data-ticket-summary]');
+  const duplicateWarning = document.querySelector('[data-duplicate-warning]');
+  const marketField = document.querySelector('[data-market-field]');
+  const marketInput = document.querySelector('[data-market-input]');
+  const marketHint = document.querySelector('[data-market-hint]');
+  const marketError = document.querySelector('[data-market-error]');
+  const oddsInput = document.querySelector('[data-odds-input]');
+  const stakeInput = document.querySelector('[data-stake-input]');
+  const resultInput = document.querySelector('[data-result-input]');
+  const payoutPreview = document.querySelector('[data-payout-preview]');
+  const savedLegEntries = JSON.parse(legList?.dataset.savedLegs || '[]');
   const legCountTypes = new Set(['Parlay', 'Same Game Parlay', 'Teaser', 'Round Robin']);
+  const marketGuidance = {
+    Spread: {
+      placeholder: 'Celtics -4.5',
+      hint: 'Enter the team followed by the spread, like Celtics -4.5.',
+      validate: (value) => /.+\s[+-]\d+(\.\d+)?$/.test(value),
+      error: 'Use format: Team +/-number, like Celtics -4.5.',
+    },
+    Moneyline: {
+      placeholder: 'Celtics',
+      hint: 'Enter just the team or side name for moneyline bets.',
+      validate: (value) => value.length > 1 && !/[+-]\d/.test(value) && !/\b(?:over|under|ml)\b/i.test(value),
+      error: 'Use format: Team name only, like Celtics.',
+    },
+    Total: {
+      placeholder: 'Celtics vs Lakers Over 226.5',
+      hint: 'Enter the matchup, then Over or Under, then the points total.',
+      validate: (value) => /.+\s(Over|Under)\s\d+(\.\d+)?$/i.test(value),
+      error: 'Use format: Matchup Over/Under number, like Celtics vs Lakers Over 226.5.',
+    },
+    'Player Prop': {
+      placeholder: 'Tatum Points Over 27.5',
+      hint: 'Enter player, stat, Over or Under, then the line.',
+      validate: (value) => /.+\s.+\s(Over|Under)\s\d+(\.\d+)?$/i.test(value),
+      error: 'Use format: Player Stat Over/Under number, like Tatum Points Over 27.5.',
+    },
+    'Team Prop': {
+      placeholder: 'Celtics Team Total Over 112.5',
+      hint: 'Enter team, prop name, Over or Under, then the line.',
+      validate: (value) => /.+\s.+\s(Over|Under)\s\d+(\.\d+)?$/i.test(value),
+      error: 'Use format: Team Prop Over/Under number, like Celtics Team Total Over 112.5.',
+    },
+    Parlay: {
+      placeholder: 'Celtics -4.5 + Over 226.5 + Tatum 25+ points',
+      hint: 'List each leg clearly so you can recognize the parlay later.',
+    },
+    'Same Game Parlay': {
+      placeholder: 'Celtics ML + Tatum Over 27.5 + Over 226.5',
+      hint: 'List each same-game leg in the order you placed it.',
+    },
+    Teaser: {
+      placeholder: 'Chiefs +8.5, Eagles +7.5',
+      hint: 'List the teased legs with the adjusted numbers.',
+    },
+    'Round Robin': {
+      placeholder: 'Celtics ML, Over 226.5, Tatum 25+ points',
+      hint: 'List the legs included in the round robin.',
+    },
+    Future: {
+      placeholder: 'Celtics to win Finals',
+      hint: 'Use the exact future market so it is easy to review later.',
+    },
+    Other: {
+      placeholder: 'Draw No Bet Arsenal',
+      hint: 'Use the exact market wording from the book for custom bet types.',
+    },
+    default: {
+      placeholder: 'Celtics -4.5',
+      hint: 'Enter the market exactly as it appeared on the sportsbook.',
+    },
+  };
+  const normalizeOptionValue = (value) => value.trim().toLowerCase();
+  const formatCurrency = (value) => {
+    const amount = Number(value || 0);
+    const sign = amount < 0 ? '-' : '';
+    return `${sign}$${Math.abs(amount).toFixed(2)}`;
+  };
+  const normalizeText = (value) => String(value || '').trim().toLowerCase();
+  const buildLegSummaryText = (entries, isMultiSport) => entries
+    .filter((entry) => entry.market.trim())
+    .map((entry, index) => {
+      if (isMultiSport && entry.sport.trim()) {
+        return `Leg ${index + 1}: ${entry.sport.trim()} - ${entry.market.trim()}`;
+      }
+
+      return `Leg ${index + 1}: ${entry.market.trim()}`;
+    })
+    .join(' | ');
+
+  const collectCurrentLegEntries = () => {
+    if (!legList) return [];
+
+    const sportValues = Array.from(legList.querySelectorAll('input[name="legSports"]')).map((input) => input.value || '');
+    const marketValues = Array.from(legList.querySelectorAll('input[name="legMarkets"]')).map((input) => input.value || '');
+    const currentCount = Math.max(sportValues.length, marketValues.length);
+
+    return Array.from({ length: currentCount }, (_, index) => ({
+      sport: sportValues[index] || '',
+      market: marketValues[index] || '',
+    }));
+  };
+
+  const renderLegInputs = () => {
+    if (!legList || !betTypeSelect) return;
+
+    const currentEntries = collectCurrentLegEntries();
+    const legCount = Number(legCountField?.querySelector('input')?.value || 0);
+    const isLegType = legCountTypes.has(betTypeSelect.value);
+    const isMultiSport = multiSportToggle?.value === 'true';
+
+    if (!isLegType || legCount < 2) {
+      legList.innerHTML = '';
+      return;
+    }
+
+    legList.innerHTML = Array.from({ length: legCount }, (_, index) => {
+      const savedEntry = currentEntries[index] || savedLegEntries[index] || {};
+      const savedSport = savedEntry.sport || '';
+      const savedMarket = savedEntry.market || '';
+
+      return `
+        <article class="bet-leg-card">
+          <div class="bet-leg-card-header">
+            <strong>Leg ${index + 1}</strong>
+          </div>
+          ${isMultiSport ? `
+            <label>
+              <span>Sport</span>
+              <input type="text" name="legSports" list="sport-options" value="${savedSport.replace(/"/g, '&quot;')}" placeholder="NBA, NHL, UFC" />
+              <small class="field-error" data-leg-sport-error></small>
+            </label>
+          ` : ''}
+          <label>
+            <span>Leg Description</span>
+            <input type="text" name="legMarkets" value="${savedMarket.replace(/"/g, '&quot;')}" placeholder="Celtics -4.5" />
+            <small class="field-error" data-leg-market-error></small>
+          </label>
+        </article>
+      `;
+    }).join('');
+
+    validateLegEntries();
+    updateTicketSummary();
+    updateDuplicateWarning();
+  };
+
+  const syncSaveOptionRow = (key, value, knownOptions, isEnabled = true) => {
+    const row = document.querySelector(`[data-save-option-row="${key}"]`);
+    const checkbox = document.querySelector(`[data-save-option-checkbox="${key}"]`);
+    const trimmedValue = value.trim();
+    const isKnownOption = knownOptions.some((option) => normalizeOptionValue(option) === normalizeOptionValue(trimmedValue));
+    const shouldShow = Boolean(isEnabled && trimmedValue && !isKnownOption);
+
+    if (!row || !checkbox) {
+      return;
+    }
+
+    row.classList.toggle('is-hidden', !shouldShow);
+
+    if (!shouldShow) {
+      checkbox.checked = false;
+    }
+  };
+
+  const validateLegEntries = () => {
+    if (!legList || !betTypeSelect || !legCountTypes.has(betTypeSelect.value)) {
+      return true;
+    }
+
+    const isMultiSport = multiSportToggle?.value === 'true';
+    const legCards = Array.from(legList.querySelectorAll('.bet-leg-card'));
+    let isValid = true;
+
+    legCards.forEach((card) => {
+      const sportField = card.querySelector('input[name="legSports"]');
+      const marketFieldInput = card.querySelector('input[name="legMarkets"]');
+      const sportError = card.querySelector('[data-leg-sport-error]');
+      const marketError = card.querySelector('[data-leg-market-error]');
+
+      if (sportError) {
+        const sportMissing = isMultiSport && !sportField?.value.trim();
+        sportError.textContent = sportMissing ? 'Enter the sport for this leg.' : '';
+        if (sportField) {
+          sportField.toggleAttribute('aria-invalid', sportMissing);
+        }
+        if (sportMissing) isValid = false;
+      }
+
+      if (marketError) {
+        const marketMissing = !marketFieldInput?.value.trim();
+        marketError.textContent = marketMissing ? 'Enter the leg description.' : '';
+        if (marketFieldInput) {
+          marketFieldInput.toggleAttribute('aria-invalid', marketMissing);
+        }
+        if (marketMissing) isValid = false;
+      }
+    });
+
+    return isValid;
+  };
+
+  const updateTicketSummary = () => {
+    if (!ticketSummary) return;
+
+    const isLegType = betTypeSelect && legCountTypes.has(betTypeSelect.value);
+    const entries = collectCurrentLegEntries();
+    const isMultiSport = multiSportToggle?.value === 'true';
+    const summaryTitle = ticketSummary.querySelector('[data-ticket-summary-title]');
+    const summarySport = ticketSummary.querySelector('[data-ticket-sport]');
+    const summaryLegCount = ticketSummary.querySelector('[data-ticket-leg-count]');
+    const summaryMarket = ticketSummary.querySelector('[data-ticket-market-summary]');
+    const filledEntries = entries.filter((entry) => entry.market.trim());
+    const summaryText = buildLegSummaryText(entries, isMultiSport);
+
+    ticketSummary.classList.toggle('is-hidden', !isLegType);
+
+    if (!isLegType) {
+      return;
+    }
+
+    if (summaryTitle) {
+      summaryTitle.textContent = filledEntries.length
+        ? `${filledEntries.length} leg${filledEntries.length === 1 ? '' : 's'} captured`
+        : 'Waiting for leg details';
+    }
+
+    if (summarySport) {
+      summarySport.textContent = isMultiSport ? '<%= multiSportLabel %>' : (sportInput?.value.trim() || 'Single Sport');
+    }
+
+    if (summaryLegCount) {
+      summaryLegCount.textContent = String(Number(legCountField?.querySelector('input')?.value || 0));
+    }
+
+    if (summaryMarket) {
+      summaryMarket.textContent = summaryText || 'Your leg summary will appear here.';
+    }
+  };
+
+  const findDuplicateCandidate = () => {
+    const betType = betTypeSelect?.value || '';
+    const betDate = betForm?.querySelector('input[name="betDate"]')?.value || '';
+    const sport = sportInput?.value || '';
+    const sportsbook = betForm?.querySelector('input[name="sportsbook"]')?.value || '';
+    const isLegType = legCountTypes.has(betType);
+    const isMultiSport = multiSportToggle?.value === 'true';
+
+    if (!betType || !betDate) {
+      return null;
+    }
+
+    if (isLegType) {
+      const currentLegs = collectCurrentLegEntries()
+        .filter((entry) => entry.market.trim())
+        .map((entry) => ({
+          sport: isMultiSport ? entry.sport.trim() : '',
+          market: entry.market.trim(),
+        }));
+
+      if (!currentLegs.length) {
+        return null;
+      }
+
+      const normalizedCurrentLegs = currentLegs.map((entry) => `${normalizeText(entry.sport)}::${normalizeText(entry.market)}`);
+
+      return duplicateCandidates.find((candidate) => {
+        if (normalizeText(candidate.betType) !== normalizeText(betType)) return false;
+        if ((candidate.betDate || '') !== betDate) return false;
+
+        const normalizedCandidateLegs = (candidate.legs || [])
+          .filter((entry) => String(entry.market || '').trim())
+          .map((entry) => `${normalizeText(entry.sport)}::${normalizeText(entry.market)}`);
+
+        if (normalizedCandidateLegs.length !== normalizedCurrentLegs.length) return false;
+
+        return normalizedCandidateLegs.every((entry, index) => entry === normalizedCurrentLegs[index]);
+      }) || null;
+    }
+
+    const marketValue = marketInput?.value || '';
+    if (!sport.trim() || !marketValue.trim()) {
+      return null;
+    }
+
+    return duplicateCandidates.find((candidate) => (
+      normalizeText(candidate.betType) === normalizeText(betType)
+      && (candidate.betDate || '') === betDate
+      && normalizeText(candidate.sport) === normalizeText(sport)
+      && normalizeText(candidate.market || candidate.displayMarket) === normalizeText(marketValue)
+      && normalizeText(candidate.sportsbook || '') === normalizeText(sportsbook || '')
+    )) || null;
+  };
+
+  const updateDuplicateWarning = () => {
+    if (!duplicateWarning) return;
+
+    const candidate = findDuplicateCandidate();
+    const title = duplicateWarning.querySelector('[data-duplicate-title]');
+    const copy = duplicateWarning.querySelector('[data-duplicate-copy]');
+
+    duplicateWarning.classList.toggle('is-hidden', !candidate);
+
+    if (!candidate) {
+      return;
+    }
+
+    if (title) {
+      title.textContent = `Similar ${candidate.betType}${candidate.legs?.length ? ` (${candidate.legs.length} legs)` : ''} already logged`;
+    }
+
+    if (copy) {
+      copy.textContent = `${candidate.betDate} • ${candidate.sport}${candidate.sportsbook ? ` • ${candidate.sportsbook}` : ''} • ${candidate.displayMarket || candidate.market}`;
+    }
+  };
+
+  const updatePayoutPreview = () => {
+    if (!payoutPreview) return;
+
+    const statusEl = payoutPreview.querySelector('[data-preview-status]');
+    const riskEl = payoutPreview.querySelector('[data-preview-risk]');
+    const winEl = payoutPreview.querySelector('[data-preview-win]');
+    const returnEl = payoutPreview.querySelector('[data-preview-return]');
+    const gradedEl = payoutPreview.querySelector('[data-preview-graded]');
+
+    const odds = Number(oddsInput?.value);
+    const stake = Number(stakeInput?.value);
+    const result = resultInput?.value || '';
+
+    const hasOdds = Number.isFinite(odds) && odds !== 0;
+    const hasStake = Number.isFinite(stake) && stake > 0;
+
+    if (!hasOdds || !hasStake) {
+      if (statusEl) statusEl.textContent = 'Waiting for odds and stake';
+      if (riskEl) riskEl.textContent = '$0.00';
+      if (winEl) winEl.textContent = '$0.00';
+      if (returnEl) returnEl.textContent = '$0.00';
+      if (gradedEl) gradedEl.textContent = '$0.00';
+      payoutPreview.classList.remove('is-win', 'is-loss', 'is-push');
+      return;
+    }
+
+    const toWin = odds > 0 ? (stake * odds) / 100 : (stake * 100) / Math.abs(odds);
+    const totalReturn = stake + toWin;
+    let gradedValue = 0;
+    let statusText = 'Potential payout';
+
+    if (result === 'win') {
+      gradedValue = toWin;
+      statusText = 'Winning ticket';
+    } else if (result === 'loss') {
+      gradedValue = -stake;
+      statusText = 'Losing ticket';
+    } else if (result === 'push') {
+      gradedValue = 0;
+      statusText = 'Push ticket';
+    }
+
+    if (statusEl) statusEl.textContent = statusText;
+    if (riskEl) riskEl.textContent = formatCurrency(stake);
+    if (winEl) winEl.textContent = formatCurrency(toWin);
+    if (returnEl) returnEl.textContent = formatCurrency(totalReturn);
+    if (gradedEl) gradedEl.textContent = formatCurrency(gradedValue);
+
+    payoutPreview.classList.toggle('is-win', result === 'win');
+    payoutPreview.classList.toggle('is-loss', result === 'loss');
+    payoutPreview.classList.toggle('is-push', result === 'push');
+  };
+
+  const setMarketValidationState = (message = '') => {
+    if (marketError) {
+      marketError.textContent = message;
+    }
+
+    if (marketInput) {
+      if (message) {
+        marketInput.setAttribute('aria-invalid', 'true');
+      } else {
+        marketInput.removeAttribute('aria-invalid');
+      }
+    }
+  };
+
+  const validateMarketInput = () => {
+    if (!marketInput) return;
+    if (betTypeSelect && legCountTypes.has(betTypeSelect.value)) {
+      setMarketValidationState('');
+      return true;
+    }
+    const selectedValue = betTypeSelect?.value || '';
+    const config = marketGuidance[selectedValue] || marketGuidance.default;
+    const currentValue = marketInput.value.trim();
+
+    if (!currentValue) {
+      setMarketValidationState('');
+      return true;
+    }
+
+    if (typeof config.validate !== 'function') {
+      setMarketValidationState('');
+      return true;
+    }
+
+    const isValid = config.validate(currentValue);
+    setMarketValidationState(isValid ? '' : config.error);
+    return isValid;
+  };
+
+  const syncMarketGuidance = () => {
+    if (!marketInput) return;
+    const selectedValue = betTypeSelect?.value || '';
+    const isLegType = legCountTypes.has(selectedValue);
+    const config = marketGuidance[selectedValue] || marketGuidance.default;
+    marketInput.disabled = isLegType;
+    marketInput.required = !isLegType;
+    marketInput.placeholder = isLegType ? 'Built automatically from the legs below' : config.placeholder;
+
+    if (marketHint) {
+      marketHint.textContent = isLegType
+        ? 'Your market summary will be built automatically from the legs below.'
+        : config.hint;
+    }
+
+    if (isLegType) {
+      setMarketValidationState('');
+    } else {
+      validateMarketInput();
+    }
+
+    if (marketField) {
+      marketField.classList.toggle('is-hidden', isLegType);
+    }
+  };
 
   const syncBetTypeFields = () => {
     if (!betTypeSelect) return;
@@ -178,6 +714,7 @@
     const selectedValue = betTypeSelect.value;
     const customInput = customBetTypeField?.querySelector('input');
     const legCountInput = legCountField?.querySelector('input');
+    const showLegType = legCountTypes.has(selectedValue);
 
     if (customBetTypeField) {
       const showCustom = selectedValue === 'Other';
@@ -187,22 +724,136 @@
         customInput.disabled = !showCustom;
         if (!showCustom) customInput.value = '';
       }
+
+      syncSaveOptionRow('bet-type', customInput?.value || '', knownBetTypeOptions, showCustom);
     }
 
     if (legCountField) {
-      const showLegCount = legCountTypes.has(selectedValue);
-      legCountField.classList.toggle('is-hidden', !showLegCount);
+      legCountField.classList.toggle('is-hidden', !showLegType);
       if (legCountInput) {
-        legCountInput.required = showLegCount;
-        legCountInput.disabled = !showLegCount;
-        if (!showLegCount) legCountInput.value = '';
+        legCountInput.required = showLegType;
+        legCountInput.disabled = !showLegType;
+        if (!showLegType) legCountInput.value = '';
       }
     }
+
+    if (multiSportToggleField) {
+      multiSportToggleField.classList.toggle('is-hidden', !showLegType);
+      if (multiSportToggle) {
+        multiSportToggle.disabled = !showLegType;
+        if (!showLegType) {
+          multiSportToggle.value = 'false';
+        }
+      }
+    }
+
+    if (legBuilder) {
+      legBuilder.classList.toggle('is-hidden', !showLegType);
+    }
+
+    const isMultiSport = showLegType && multiSportToggle?.value === 'true';
+    if (multiSportBanner) {
+      multiSportBanner.classList.toggle('is-hidden', !isMultiSport);
+    }
+    if (sportInput) {
+      sportInput.disabled = isMultiSport;
+      sportInput.required = !isMultiSport;
+      if (isMultiSport) {
+        sportInput.value = '<%= multiSportLabel %>';
+      } else if (sportInput.value === '<%= multiSportLabel %>') {
+        sportInput.value = '';
+      }
+
+      syncSaveOptionRow('sport', sportInput.value, knownSportOptions, !isMultiSport);
+    }
+
+    renderLegInputs();
+
+    syncMarketGuidance();
+    updateTicketSummary();
+    updateDuplicateWarning();
   };
 
   if (betTypeSelect) {
     betTypeSelect.addEventListener('change', syncBetTypeFields);
     syncBetTypeFields();
+  } else {
+    syncMarketGuidance();
+  }
+
+  document.querySelector('[data-save-option-input="sport"]')?.addEventListener('input', (event) => {
+    syncSaveOptionRow('sport', event.target.value, knownSportOptions, true);
+  });
+  document.querySelector('[data-save-option-input="sportsbook"]')?.addEventListener('input', (event) => {
+    syncSaveOptionRow('sportsbook', event.target.value, knownSportsbookOptions, true);
+  });
+  customBetTypeField?.querySelector('input')?.addEventListener('input', (event) => {
+    syncSaveOptionRow('bet-type', event.target.value, knownBetTypeOptions, betTypeSelect?.value === 'Other');
+  });
+
+  syncSaveOptionRow('sport', document.querySelector('[data-save-option-input="sport"]')?.value || '', knownSportOptions, true);
+  syncSaveOptionRow('sportsbook', document.querySelector('[data-save-option-input="sportsbook"]')?.value || '', knownSportsbookOptions, true);
+  syncSaveOptionRow('bet-type', customBetTypeField?.querySelector('input')?.value || '', knownBetTypeOptions, betTypeSelect?.value === 'Other');
+
+  multiSportToggle?.addEventListener('change', syncBetTypeFields);
+  legCountField?.querySelector('input')?.addEventListener('input', renderLegInputs);
+  legCountField?.querySelector('input')?.addEventListener('blur', renderLegInputs);
+
+  if (marketInput) {
+    marketInput.addEventListener('input', validateMarketInput);
+    marketInput.addEventListener('blur', validateMarketInput);
+    marketInput.addEventListener('input', updateDuplicateWarning);
+    marketInput.addEventListener('blur', updateDuplicateWarning);
+  }
+
+  [oddsInput, stakeInput].forEach((input) => {
+    input?.addEventListener('input', updatePayoutPreview);
+    input?.addEventListener('blur', updatePayoutPreview);
+  });
+
+  resultInput?.addEventListener('change', updatePayoutPreview);
+  updatePayoutPreview();
+
+  betForm?.querySelector('input[name="betDate"]')?.addEventListener('change', updateDuplicateWarning);
+  betForm?.querySelector('input[name="sportsbook"]')?.addEventListener('input', updateDuplicateWarning);
+  sportInput?.addEventListener('input', updateDuplicateWarning);
+  legList?.addEventListener('input', () => {
+    validateLegEntries();
+    updateTicketSummary();
+    updateDuplicateWarning();
+  });
+  legList?.addEventListener('blur', () => {
+    validateLegEntries();
+    updateTicketSummary();
+    updateDuplicateWarning();
+  }, true);
+  updateTicketSummary();
+  updateDuplicateWarning();
+
+  if (betForm) {
+    betForm.addEventListener('submit', (event) => {
+      const isLegType = betTypeSelect && legCountTypes.has(betTypeSelect.value);
+
+      if (isLegType && !validateLegEntries()) {
+        event.preventDefault();
+        legList?.querySelector('[aria-invalid="true"]')?.focus();
+        return;
+      }
+
+      if (!validateMarketInput()) {
+        event.preventDefault();
+        marketInput?.focus();
+        return;
+      }
+
+      const submitButton = event.submitter || betForm.querySelector('[data-submit-button]');
+      if (!submitButton) return;
+
+      betForm.querySelectorAll('[data-submit-button]').forEach((button) => {
+        button.disabled = true;
+      });
+      submitButton.textContent = submitButton.dataset.pendingLabel || 'Submitting...';
+    });
   }
 
   const betTipsModal = document.querySelector('[data-bet-tips-modal]');
