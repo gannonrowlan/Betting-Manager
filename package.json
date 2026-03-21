@@ -1,14 +1,19 @@
 {
   "name": "sports-betting-manager",
   "version": "1.0.0",
-  "description": "Bankroll IQ\r A performance and discipline app for sports bettors.\r Core promise\r “Know whether you are actually winning, where your edge is, and how to manage your bankroll without guessing.”\r That is much stronger than “AI picks.”\r What features should be in version 1\r Start with only the features that make someone say, “I need this every week.”\r MVP features\r manual bet entry\r bankroll balance\r unit size setting\r profit/loss tracking\r win rate\r ROI\r record by sport\r record by bet type\r odds history\r dashboard with filters\r weekly/monthly recap\r notes/tags on bets\r Version 2\r CLV tracking\r import from sportsbooks by CSV\r tax estimate summary\r streak and variance graphs\r alerts when bet size breaks bankroll rules\r “what is your actual edge?” reports\r Version 3\r automatic syncing with books\r line shopping\r social sharing\r community leaderboards\r sharp bettor workflow tools\r The biggest mistake to avoid\r Do not build it around “winning picks.”\r That creates problems:\r way harder to prove value\r more trust issues\r more competition\r more policy and legal risk\r users cancel fast if your picks go cold\r Tracking apps are better because they are useful even when users lose. They keep paying for insight, organization, and discipline.\r How to charge monthly\r Subscription can work well here because analytics are an ongoing service, and both Apple and Google support recurring in-app subscriptions. Apple’s auto-renewable subscriptions are specifically built for ongoing premium features and services.\r A clean pricing model:\r Free: up to 25 bets per month, basic dashboard\r Pro: $7.99 to $12.99/month\r Pro+: $15.99 to $24.99/month if you add sync/import, CLV, exports, and deeper analytics\r What people would actually pay for:\r unlimited tracking\r sportsbook imports\r CLV reports\r tax summaries\r advanced charts\r exports\r bankroll coaching rules",
-  "main": "index.js",
+  "description": "Bankroll IQ is a sports betting tracker focused on bankroll discipline, ROI, and performance review.",
+  "main": "src/server.js",
   "scripts": {
     "test": "node --test",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js"
   },
-  "keywords": [],
+  "keywords": [
+    "sports-betting",
+    "bankroll",
+    "express",
+    "ejs"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {

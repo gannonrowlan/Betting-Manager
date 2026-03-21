@@ -24,10 +24,11 @@
     <p class="eyebrow">Register</p>
     <h2>Create your account</h2>
     <p class="muted auth-intro">A few details and you are ready to start logging bets and reviewing results.</p>
-    <form method="POST" action="/auth/register" class="form-grid auth-form" autocomplete="on">
+    <form method="POST" action="/auth/register" class="form-grid auth-form" autocomplete="on" data-auth-form="register">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>
         <span>Name</span>
-        <input type="text" name="name" required autocomplete="name" value="<%= formData?.name || '' %>" data-field="name" />
+        <input type="text" name="name" required autocomplete="name" autofocus value="<%= formData?.name || '' %>" data-field="name" />
         <small class="field-error" data-error-for="name" aria-live="polite"></small>
       </label>
       <label>
@@ -38,16 +39,16 @@
       <label>
         <span>Password</span>
         <div class="password-input-wrap">
-          <input id="register-password" type="password" name="password" required minlength="8" autocomplete="new-password" data-field="password" />
+          <input id="register-password" type="password" name="password" required minlength="10" autocomplete="new-password" data-field="password" />
           <button type="button" class="link-btn password-toggle" data-password-toggle="register-password" aria-label="Show password">Show</button>
         </div>
-        <small class="field-hint">Use at least 8 characters.</small>
+        <small class="field-hint">Use 10+ characters. Avoid your name, email, and common passwords.</small>
         <small class="field-error" data-error-for="password" aria-live="polite"></small>
       </label>
       <label>
         <span>Confirm password</span>
         <div class="password-input-wrap">
-          <input id="register-confirm-password" type="password" name="confirmPassword" required minlength="8" autocomplete="new-password" data-field="confirmPassword" />
+          <input id="register-confirm-password" type="password" name="confirmPassword" required minlength="10" autocomplete="new-password" data-field="confirmPassword" />
           <button type="button" class="link-btn password-toggle" data-password-toggle="register-confirm-password" aria-label="Show password">Show</button>
         </div>
         <small class="field-error" data-error-for="confirmPassword" aria-live="polite"></small>
@@ -56,114 +57,11 @@
         <input type="checkbox" name="rememberMe" <%= formData?.rememberMe !== false ? 'checked' : '' %> />
         Keep me signed in for 30 days
       </label>
-      <button class="btn auth-submit" type="submit">Create Account</button>
+      <button class="btn auth-submit" type="submit" data-submit-button data-default-label="Create Account" data-pending-label="Creating account...">Create Account</button>
     </form>
     <p class="auth-trust-note">No credit card required. Start tracking in minutes.</p>
     <p class="auth-switch">Already have an account? <a href="/auth/login">Log in</a>.</p>
   </section>
 </section>
-<script>
-  const registerForm = document.querySelector('.auth-form');
-
-  if (registerForm) {
-    const messages = {
-      name: {
-        valueMissing: 'Enter your name.'
-      },
-      email: {
-        valueMissing: 'Enter your email address.',
-        typeMismatch: 'Enter a valid email address.'
-      },
-      password: {
-        valueMissing: 'Create a password.',
-        tooShort: 'Password must be at least 8 characters.'
-      },
-      confirmPassword: {
-        valueMissing: 'Confirm your password.'
-      }
-    };
-
-    const setFieldError = (input) => {
-      const error = registerForm.querySelector(`[data-error-for="${input.name}"]`);
-      if (!error) return;
-
-      if (input.name === 'confirmPassword') {
-        const password = registerForm.querySelector('[name="password"]');
-        if (input.value && password && input.value !== password.value) {
-          input.setCustomValidity('Passwords do not match.');
-        } else {
-          input.setCustomValidity('');
-        }
-      }
-
-      if (input.validity.valid) {
-        input.removeAttribute('aria-invalid');
-        error.textContent = '';
-        return;
-      }
-
-      const fieldMessages = messages[input.name] || {};
-      let message = input.validationMessage || 'Check this field.';
-
-      Object.keys(fieldMessages).some((key) => {
-        if (input.validity[key]) {
-          message = fieldMessages[key];
-          return true;
-        }
-        return false;
-      });
-
-      if (input.name === 'confirmPassword' && input.validationMessage === 'Passwords do not match.') {
-        message = 'Passwords do not match.';
-      }
-
-      input.setAttribute('aria-invalid', 'true');
-      error.textContent = message;
-    };
-
-    const confirmPassword = registerForm.querySelector('[name="confirmPassword"]');
-
-    registerForm.querySelectorAll('[data-field]').forEach((input) => {
-      input.addEventListener('input', () => {
-        setFieldError(input);
-        if (input.name === 'password' && confirmPassword) {
-          setFieldError(confirmPassword);
-        }
-      });
-      input.addEventListener('blur', () => setFieldError(input));
-      input.addEventListener('invalid', (event) => {
-        event.preventDefault();
-        setFieldError(input);
-      });
-    });
-
-    registerForm.addEventListener('submit', (event) => {
-      let hasError = false;
-      registerForm.querySelectorAll('[data-field]').forEach((input) => {
-        setFieldError(input);
-        if (!input.validity.valid) {
-          hasError = true;
-        }
-      });
-
-      if (hasError) {
-        event.preventDefault();
-      }
-    });
-  }
-
-  document.querySelectorAll('[data-password-toggle]').forEach((button) => {
-    const inputId = button.getAttribute('data-password-toggle');
-    const input = document.getElementById(inputId);
-
-    if (!input) return;
-
-    button.addEventListener('click', () => {
-      const isPassword = input.type === 'password';
-      input.type = isPassword ? 'text' : 'password';
-      button.textContent = isPassword ? 'Hide' : 'Show';
-      button.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
-    });
-  });
-</script>
+<script src="/public/js/authForms.js"></script>
 <%- include('../partials/footer') %>

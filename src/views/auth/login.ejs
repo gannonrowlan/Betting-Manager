@@ -24,10 +24,11 @@
     <p class="eyebrow">Log In</p>
     <h2>Access your dashboard</h2>
     <p class="muted auth-intro">Use your account details to continue tracking and reviewing your bets.</p>
-    <form method="POST" action="/auth/login" class="form-grid auth-form" autocomplete="on">
+    <form method="POST" action="/auth/login" class="form-grid auth-form" autocomplete="on" data-auth-form="login">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <label>
         <span>Email</span>
-        <input type="email" name="email" required autocomplete="email" value="<%= formData?.email || '' %>" data-field="email" />
+        <input type="email" name="email" required autocomplete="email" autofocus value="<%= formData?.email || '' %>" data-field="email" />
         <small class="field-error" data-error-for="email" aria-live="polite"></small>
       </label>
       <label>
@@ -38,110 +39,14 @@
         </div>
         <small class="field-error" data-error-for="password" aria-live="polite"></small>
       </label>
-      <div class="form-note-row">
-        <button type="button" class="text-link" data-reset-note-toggle="login-reset-note" aria-expanded="false">Forgot password?</button>
-        <small id="login-reset-note" class="field-hint field-hint-inline" hidden>Password reset is not available in this version yet.</small>
-      </div>
       <label class="checkbox-label">
         <input type="checkbox" name="rememberMe" <%= formData?.rememberMe !== false ? 'checked' : '' %> />
         Remember me for 30 days
       </label>
-      <button class="btn auth-submit" type="submit">Log In</button>
+      <button class="btn auth-submit" type="submit" data-submit-button data-default-label="Log In" data-pending-label="Logging in...">Log In</button>
     </form>
     <p class="auth-switch">New to Bankroll IQ? <a href="/auth/register">Create an account</a>.</p>
   </section>
 </section>
-<script>
-  const loginForm = document.querySelector('.auth-form');
-
-  if (loginForm) {
-    const messages = {
-      email: {
-        valueMissing: 'Enter your email address.',
-        typeMismatch: 'Enter a valid email address.'
-      },
-      password: {
-        valueMissing: 'Enter your password.'
-      }
-    };
-
-    const setFieldError = (input) => {
-      const error = loginForm.querySelector(`[data-error-for="${input.name}"]`);
-      if (!error) return;
-
-      if (input.validity.valid) {
-        input.removeAttribute('aria-invalid');
-        error.textContent = '';
-        return;
-      }
-
-      const fieldMessages = messages[input.name] || {};
-      let message = 'Check this field.';
-
-      Object.keys(fieldMessages).some((key) => {
-        if (input.validity[key]) {
-          message = fieldMessages[key];
-          return true;
-        }
-        return false;
-      });
-
-      input.setAttribute('aria-invalid', 'true');
-      error.textContent = message;
-    };
-
-    loginForm.querySelectorAll('[data-field]').forEach((input) => {
-      input.addEventListener('input', () => setFieldError(input));
-      input.addEventListener('blur', () => setFieldError(input));
-      input.addEventListener('invalid', (event) => {
-        event.preventDefault();
-        setFieldError(input);
-      });
-    });
-
-    loginForm.addEventListener('submit', (event) => {
-      let hasError = false;
-      loginForm.querySelectorAll('[data-field]').forEach((input) => {
-        setFieldError(input);
-        if (!input.validity.valid) {
-          hasError = true;
-        }
-      });
-
-      if (hasError) {
-        event.preventDefault();
-      }
-    });
-  }
-
-  document.querySelectorAll('[data-reset-note-toggle]').forEach((button) => {
-    const noteId = button.getAttribute('data-reset-note-toggle');
-    const note = document.getElementById(noteId);
-    if (!note) return;
-
-    button.addEventListener('click', () => {
-      const isHidden = note.hasAttribute('hidden');
-      if (isHidden) {
-        note.removeAttribute('hidden');
-      } else {
-        note.setAttribute('hidden', '');
-      }
-      button.setAttribute('aria-expanded', String(isHidden));
-    });
-  });
-
-  document.querySelectorAll('[data-password-toggle]').forEach((button) => {
-    const inputId = button.getAttribute('data-password-toggle');
-    const input = document.getElementById(inputId);
-
-    if (!input) return;
-
-    button.addEventListener('click', () => {
-      const isPassword = input.type === 'password';
-      input.type = isPassword ? 'text' : 'password';
-      button.textContent = isPassword ? 'Hide' : 'Show';
-      button.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
-    });
-  });
-</script>
+<script src="/public/js/authForms.js"></script>
 <%- include('../partials/footer') %>
