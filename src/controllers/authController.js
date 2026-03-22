@@ -99,6 +99,19 @@ function renderLogin(req, res) {
   return res.render('auth/login', { title: 'Login', formData });
 }
 
+function renderAccount(req, res) {
+  const formData = req.session.accountFormData || {
+    name: req.session.user?.name || '',
+    email: req.session.user?.email || '',
+  };
+  req.session.accountFormData = null;
+
+  return res.render('settings/account', {
+    title: 'Account',
+    formData,
+  });
+}
+
 async function register(req, res) {
   const name = (req.body.name || '').trim();
   const email = (req.body.email || '').trim().toLowerCase();
@@ -218,6 +231,105 @@ async function login(req, res) {
   }
 }
 
+async function updateAccount(req, res) {
+  const userId = req.session.user.id;
+  const name = (req.body.name || '').trim();
+  const email = (req.body.email || '').trim().toLowerCase();
+  const currentPassword = req.body.currentPassword || '';
+  const newPassword = req.body.newPassword || '';
+  const confirmPassword = req.body.confirmPassword || '';
+
+  req.session.accountFormData = { name, email };
+
+  if (!name || !email) {
+    req.session.messages = [{ type: 'error', text: 'Name and email are required.' }];
+    return res.redirect('/settings/account');
+  }
+
+  if (!isValidName(name)) {
+    req.session.messages = [{ type: 'error', text: 'Name must be between 2 and 80 characters.' }];
+    return res.redirect('/settings/account');
+  }
+
+  if (!isValidEmail(email)) {
+    req.session.messages = [{ type: 'error', text: 'Enter a valid email address.' }];
+    return res.redirect('/settings/account');
+  }
+
+  try {
+    const [users] = await pool.query('SELECT id, name, email, password_hash FROM users WHERE id = ?', [userId]);
+
+    if (!users.length) {
+      req.session.messages = [{ type: 'error', text: 'Account not found.' }];
+      return res.redirect('/auth/login');
+    }
+
+    const user = users[0];
+
+    const [existing] = await pool.query('SELECT id FROM users WHERE email = ? AND id <> ?', [email, userId]);
+    if (existing.length) {
+      req.session.messages = [{ type: 'error', text: 'That email is already in use.' }];
+      return res.redirect('/settings/account');
+    }
+
+    let nextPasswordHash = user.password_hash;
+
+    if (newPassword || confirmPassword || currentPassword) {
+      if (!currentPassword) {
+        req.session.messages = [{ type: 'error', text: 'Enter your current password to change it.' }];
+        return res.redirect('/settings/account');
+      }
+
+      const currentPasswordMatches = await bcrypt.compare(currentPassword, user.password_hash);
+      if (!currentPasswordMatches) {
+        req.session.messages = [{ type: 'error', text: 'Current password is incorrect.' }];
+        return res.redirect('/settings/account');
+      }
+
+      if (newPassword.length < 10) {
+        req.session.messages = [{ type: 'error', text: 'New password must be at least 10 characters.' }];
+        return res.redirect('/settings/account');
+      }
+
+      if (passwordContainsPersonalInfo(newPassword, name, email)) {
+        req.session.messages = [{ type: 'error', text: 'New password cannot include your name or email.' }];
+        return res.redirect('/settings/account');
+      }
+
+      if (isCommonPassword(newPassword)) {
+        req.session.messages = [{ type: 'error', text: 'Choose a less common password.' }];
+        return res.redirect('/settings/account');
+      }
+
+      if (newPassword !== confirmPassword) {
+        req.session.messages = [{ type: 'error', text: 'New passwords do not match.' }];
+        return res.redirect('/settings/account');
+      }
+
+      nextPasswordHash = await bcrypt.hash(newPassword, 10);
+    }
+
+    await pool.query('UPDATE users SET name = ?, email = ?, password_hash = ? WHERE id = ?', [
+      name,
+      email,
+      nextPasswordHash,
+      userId,
+    ]);
+
+    req.session.user = {
+      ...req.session.user,
+      name,
+      email,
+    };
+    req.session.accountFormData = null;
+    req.session.messages = [{ type: 'success', text: 'Account updated successfully.' }];
+    return res.redirect('/settings/account');
+  } catch (error) {
+    req.session.messages = [{ type: 'error', text: 'Unable to update your account right now.' }];
+    return res.redirect('/settings/account');
+  }
+}
+
 function logout(req, res) {
   req.session.destroy(() => {
     res.redirect('/');
@@ -225,9 +337,11 @@ function logout(req, res) {
 }
 
 module.exports = {
+  renderAccount,
   renderRegister,
   renderLogin,
   register,
   login,
+  updateAccount,
   logout,
 };

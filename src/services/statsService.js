@@ -84,6 +84,11 @@ function getDateRangePreset(range = 'all', today = new Date()) {
     return { startDate, endDate };
   }
 
+  if (range === 'year') {
+    startDate.setUTCMonth(0, 1);
+    return { startDate, endDate };
+  }
+
   return { startDate: null, endDate: null };
 }
 

@@ -1,0 +1,69 @@
+<%- include('../partials/header') %>
+<section class="account-shell">
+  <section class="card account-hero-card">
+    <div class="account-hero-copy">
+      <p class="eyebrow">Account</p>
+      <h1>Update the details tied to your account.</h1>
+      <p class="muted">Change your name, email, or password from one place without digging through the app.</p>
+    </div>
+    <div class="account-hero-badge">
+      <span>Signed in as</span>
+      <strong><%= user.name %></strong>
+      <small><%= user.email %></small>
+    </div>
+  </section>
+
+  <section class="account-panel-grid">
+    <article class="card account-panel-card">
+      <div class="account-panel-head">
+        <div>
+          <p class="account-panel-kicker">Profile</p>
+          <h2>Basic information</h2>
+        </div>
+        <span>Keep your contact details current.</span>
+      </div>
+
+      <form method="POST" action="/settings/account" class="form-grid two-col">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <label>
+          Full Name
+          <input type="text" name="name" value="<%= formData.name %>" minlength="2" maxlength="80" required />
+        </label>
+
+        <label>
+          Email Address
+          <input type="email" name="email" value="<%= formData.email %>" required />
+        </label>
+
+        <div class="account-password-block full">
+          <div class="account-password-copy">
+            <p class="account-panel-kicker">Password</p>
+            <h3>Change password</h3>
+            <span>Leave these blank if you are only updating name or email.</span>
+          </div>
+
+          <div class="account-password-grid">
+            <label>
+              Current Password
+              <input type="password" name="currentPassword" autocomplete="current-password" />
+            </label>
+
+            <label>
+              New Password
+              <input type="password" name="newPassword" minlength="10" autocomplete="new-password" />
+            </label>
+
+            <label class="full">
+              Confirm New Password
+              <input type="password" name="confirmPassword" minlength="10" autocomplete="new-password" />
+            </label>
+          </div>
+        </div>
+
+        <button class="btn full" type="submit">Save Account Changes</button>
+      </form>
+    </article>
+  </section>
+</section>
+<%- include('../partials/footer') %>

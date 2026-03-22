@@ -28,6 +28,7 @@ function normalizeDashboardFilters(query = {}) {
   const preset = getDateRangePreset(range);
   const rawStartDate = (query.startDate || '').trim();
   const rawEndDate = (query.endDate || '').trim();
+  const filtersOpen = query.filtersOpen === '1' || range === 'custom';
 
   const startDate = range === 'custom' ? parseDateInput(rawStartDate) : preset.startDate;
   const endDate = range === 'custom' ? parseDateInput(rawEndDate) : preset.endDate;
@@ -40,6 +41,7 @@ function normalizeDashboardFilters(query = {}) {
     endDateValue: range === 'custom' ? rawEndDate : formatDateInput(preset.endDate),
     isCustom: range === 'custom',
     hasDateFilter: Boolean(startDate || endDate),
+    filtersOpen,
   };
 }
 
@@ -59,6 +61,25 @@ function formatTrendLabel(filters) {
   return `Through ${formatDateInput(filters.endDate)}`;
 }
 
+function filterBetsByDateRange(bets = [], filters = {}) {
+  return bets.filter((bet) => {
+    const betDate = new Date(bet.bet_date || bet.betDate);
+    if (Number.isNaN(betDate.getTime())) {
+      return false;
+    }
+
+    if (filters.startDate && betDate < filters.startDate) {
+      return false;
+    }
+
+    if (filters.endDate && betDate > filters.endDate) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
 function getBestAndWorstGroup(groups = []) {
   if (!groups.length) {
     return {
@@ -72,10 +93,6 @@ function getBestAndWorstGroup(groups = []) {
     best: sortedByProfit[0],
     worst: sortedByProfit[sortedByProfit.length - 1],
   };
-}
-
-function getTopGroup(groups = []) {
-  return groups.length ? groups[0] : null;
 }
 
 function formatDashboardDate(date) {
@@ -155,6 +172,49 @@ function getTrendInsights(trendSeries = []) {
 
 function formatCurrency(value = 0) {
   return Number(value || 0).toFixed(2);
+}
+
+function formatStatsMonthLabel(monthKey = '') {
+  if (!monthKey) {
+    return '';
+  }
+
+  const parsed = new Date(`${monthKey}-01T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) {
+    return monthKey;
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(parsed);
+}
+
+function buildStatsStory({ summary, highlights, bestMonth, worstMonth }) {
+  if (!summary.totalBets) {
+    return 'Log a few graded bets and this page will start calling out where your edge is strongest, where it leaks, and how your month-to-month performance is changing.';
+  }
+
+  const profitRead = summary.netProfit >= 0
+    ? `You are up $${Number(summary.netProfit).toFixed(2)} with a ${summary.roi}% ROI in this view.`
+    : `You are down $${Math.abs(Number(summary.netProfit)).toFixed(2)} with a ${summary.roi}% ROI in this view.`;
+
+  const sportRead = highlights.bestSport
+    ? `Your best sport is ${highlights.bestSport.key} (${highlights.bestSport.units}u across ${highlights.bestSport.totalBets} bets).`
+    : 'You do not have enough sport data yet to surface a clear top category.';
+
+  const weakSpotRead = highlights.worstBetType
+    ? `Your weakest spot right now is ${highlights.worstBetType.key} (${highlights.worstBetType.roi}% ROI).`
+    : 'Your weakest bet type will appear here once a few categories are populated.';
+
+  const monthRead = bestMonth && worstMonth
+    ? `Your best month so far is ${bestMonth.label}, while ${worstMonth.label} has been the toughest.`
+    : bestMonth
+      ? `Your strongest month so far is ${bestMonth.label}.`
+      : 'Monthly trends will become clearer as more settled bets stack up.';
+
+  return [profitRead, sportRead, weakSpotRead, monthRead].join(' ');
 }
 
 function buildBankrollTransactionSummary(transactions = []) {
@@ -424,23 +484,6 @@ async function renderBankrollSettings(req, res) {
   const betSummary = summarizeBets(bets, profile.unitSize);
   const transactionSummary = buildBankrollTransactionSummary(transactions);
   const currentBankroll = profile.startingBankroll + betSummary.netProfit + transactionSummary.deposits - transactionSummary.withdrawals;
-  const bankrollTimeline = buildBankrollTimeline({
-    startingBankroll: profile.startingBankroll,
-    bets,
-    transactions,
-  });
-  const peakBankroll = bankrollTimeline.length
-    ? Math.max(profile.startingBankroll, ...bankrollTimeline.map((point) => point.bankroll))
-    : profile.startingBankroll;
-  const lowBankroll = bankrollTimeline.length
-    ? Math.min(profile.startingBankroll, ...bankrollTimeline.map((point) => point.bankroll))
-    : profile.startingBankroll;
-  const drawdown = calculateDrawdown(bankrollTimeline, profile.startingBankroll);
-  const unitRecommendations = buildUnitRecommendations({
-    currentBankroll,
-    profileUnitSize: profile.unitSize,
-    averageStake: betSummary.averageStake,
-  });
 
   return res.render('settings/bankroll', {
     title: 'Bankroll Settings',
@@ -458,16 +501,7 @@ async function renderBankrollSettings(req, res) {
       netProfit: formatCurrency(betSummary.netProfit),
       deposits: formatCurrency(transactionSummary.deposits),
       withdrawals: formatCurrency(transactionSummary.withdrawals),
-      peakBankroll: formatCurrency(peakBankroll),
-      lowBankroll: formatCurrency(lowBankroll),
-      drawdown: formatCurrency(drawdown),
-      averageStake: formatCurrency(betSummary.averageStake),
     },
-    bankrollTimeline,
-    unitRecommendations: unitRecommendations.map((recommendation) => ({
-      ...recommendation,
-      amount: formatCurrency(recommendation.amount),
-    })),
   });
 }
 
@@ -544,41 +578,90 @@ async function removeBankrollAdjustment(req, res) {
 
 async function renderStats(req, res) {
   const userId = req.session.user.id;
+  const filters = normalizeDashboardFilters(req.query);
   const profile = await getOrCreateProfile(userId);
-  const [bets] = await pool.query(
+  const [allBets] = await pool.query(
     'SELECT * FROM bets WHERE user_id = ? ORDER BY bet_date DESC, created_at DESC',
     [userId]
   );
+  const filteredBets = filterBetsByDateRange(allBets, filters);
+  const transactions = await getBankrollTransactions(userId);
+  const transactionSummary = buildBankrollTransactionSummary(transactions);
 
-  const summary = summarizeBets(bets, profile.unitSize);
-  const sportStats = groupPerformance(bets, 'sport', profile.unitSize);
+  const summary = summarizeBets(filteredBets, profile.unitSize);
+  const sportStats = groupPerformance(filteredBets, 'sport', profile.unitSize);
   const sportsbookStats = groupPerformance(
-    bets.filter((bet) => (bet.sportsbook || '').trim()),
+    filteredBets.filter((bet) => (bet.sportsbook || '').trim()),
     'sportsbook',
     profile.unitSize
   );
-  const betTypeStats = groupPerformance(bets, 'bet_type', profile.unitSize).map((row) => ({
+  const betTypeStats = groupPerformance(filteredBets, 'bet_type', profile.unitSize).map((row) => ({
     ...row,
     betType: row.key,
   }));
-  const monthlyRecap = buildMonthlyRecap(bets, profile.unitSize);
-  const topSport = getTopGroup(sportStats);
-  const topSportsbook = getTopGroup(sportsbookStats);
-  const topBetType = getTopGroup(betTypeStats);
+  const monthlyRecap = buildMonthlyRecap(filteredBets, profile.unitSize).map((row) => ({
+    ...row,
+    label: formatStatsMonthLabel(row.month),
+  }));
+  const { best: bestSport, worst: worstSport } = getBestAndWorstGroup(sportStats);
+  const { best: bestSportsbook, worst: worstSportsbook } = getBestAndWorstGroup(sportsbookStats);
+  const { best: bestBetType, worst: worstBetType } = getBestAndWorstGroup(betTypeStats);
+  const sortedMonthsByProfit = [...monthlyRecap].sort((left, right) => right.netProfit - left.netProfit);
+  const bestMonth = sortedMonthsByProfit[0] || null;
+  const worstMonth = sortedMonthsByProfit[sortedMonthsByProfit.length - 1] || null;
+  const overallSummary = summarizeBets(allBets, profile.unitSize);
+  const currentBankroll = profile.startingBankroll + overallSummary.netProfit + transactionSummary.deposits - transactionSummary.withdrawals;
+  const bankrollTimeline = buildBankrollTimeline({
+    startingBankroll: profile.startingBankroll,
+    bets: allBets,
+    transactions,
+  });
+  const peakBankroll = bankrollTimeline.length
+    ? Math.max(profile.startingBankroll, ...bankrollTimeline.map((point) => point.bankroll))
+    : profile.startingBankroll;
+  const drawdown = calculateDrawdown(bankrollTimeline, profile.startingBankroll);
+  const statsStory = buildStatsStory({
+    summary,
+    highlights: {
+      bestSport,
+      worstBetType,
+    },
+    bestMonth,
+    worstMonth,
+  });
 
-  return res.render('stats', {
+  const viewModel = {
     title: 'Stats',
+    filters,
+    filterLabel: formatTrendLabel(filters),
     summary,
     sportStats,
     sportsbookStats,
     betTypeStats,
     monthlyRecap,
-    highlights: {
-      topSport,
-      topSportsbook,
-      topBetType,
+    bestMonth,
+    worstMonth,
+    bankrollSnapshot: {
+      currentBankroll,
+      peakBankroll,
+      drawdown,
     },
-  });
+    statsStory,
+    highlights: {
+      bestSport,
+      worstSport,
+      bestSportsbook,
+      worstSportsbook,
+      bestBetType,
+      worstBetType,
+    },
+  };
+
+  if (req.query.partial === '1' || req.get('X-Requested-With') === 'fetch') {
+    return res.render('partials/statsContent', viewModel);
+  }
+
+  return res.render('stats', viewModel);
 }
 
 module.exports = {

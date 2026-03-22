@@ -12,14 +12,23 @@
       <a href="/" class="logo">Bankroll IQ</a>
       <nav>
         <% if (user) { %>
-          <a href="/dashboard">Dashboard</a>
-          <a href="/bets/new">Add Bet</a>
-          <a href="/bets/history">History</a>
-          <a href="/stats">Stats</a>
-          <a href="/settings/bankroll">Bankroll</a>
-          <form action="/auth/logout" method="POST" class="inline-form">
-            <button type="submit" class="link-btn">Logout</button>
-          </form>
+          <div class="nav-links-group">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/bets/new">Add Bet</a>
+            <a href="/bets/history">History</a>
+            <a href="/stats">Stats</a>
+            <a href="/settings/bankroll">Bankroll</a>
+          </div>
+          <div class="nav-actions-group">
+            <form action="/auth/logout" method="POST" class="inline-form">
+              <button type="submit" class="link-btn">Logout</button>
+            </form>
+            <a href="/settings/account" class="nav-account-link" aria-label="Account settings" title="Account settings">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 12a4.25 4.25 0 1 0-4.25-4.25A4.25 4.25 0 0 0 12 12Zm0 2c-4.38 0-7.5 2.13-7.5 5.07 0 .52.42.93.94.93h13.12a.93.93 0 0 0 .94-.93C19.5 16.13 16.38 14 12 14Z"></path>
+              </svg>
+            </a>
+          </div>
         <% } else { %>
           <a href="/auth/login">Login</a>
           <a href="/auth/register" class="btn btn-small">Get Started</a>

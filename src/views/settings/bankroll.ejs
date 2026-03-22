@@ -1,81 +1,44 @@
 <%- include('../partials/header') %>
-<section class="stats-shell">
-  <section class="card stats-hero">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">Bankroll Center</p>
-        <h1>Manage the cash behind every bet.</h1>
-        <p class="muted">Track deposits, withdrawals, bankroll drift, and unit sizing from one place.</p>
-      </div>
+<section class="bankroll-shell bankroll-shell-redesign">
+  <section class="card bankroll-hero-card">
+    <div class="bankroll-hero-copy">
+      <p class="eyebrow">Bankroll Desk</p>
+      <h1>Keep the bankroll page focused on the numbers that matter.</h1>
+      <p class="muted">Set your bankroll baseline, update unit size, log cash movements, and review the adjustment history.</p>
     </div>
 
-    <div class="stats-grid stats-overview-grid">
-      <article class="card stat-card stat-card-featured">
-        <h3>Current Bankroll</h3>
-        <p>$<%= summary.currentBankroll %></p>
-        <small>Starting bankroll plus betting results and cash movements</small>
+    <div class="bankroll-signal-grid">
+      <article class="bankroll-signal-card bankroll-signal-card-primary">
+        <span>Current bankroll</span>
+        <strong class="<%= Number(summary.currentBankroll.replace(/,/g, '')) >= 0 ? 'positive' : 'negative' %>">$<%= summary.currentBankroll %></strong>
       </article>
-      <article class="card stat-card">
-        <h3>Net Betting P/L</h3>
-        <p class="<%= Number(summary.netProfit) >= 0 ? 'positive' : 'negative' %>">$<%= summary.netProfit %></p>
-        <small>Performance from wagers only</small>
+      <article class="bankroll-signal-card">
+        <span>Starting bankroll</span>
+        <strong>$<%= summary.startingBankroll %></strong>
       </article>
-      <article class="card stat-card">
-        <h3>Deposits</h3>
-        <p>$<%= summary.deposits %></p>
-        <small>Total cash added</small>
+      <article class="bankroll-signal-card">
+        <span>Unit size</span>
+        <strong>$<%= profile.unitSize.toFixed(2) %></strong>
       </article>
-      <article class="card stat-card">
-        <h3>Withdrawals</h3>
-        <p>$<%= summary.withdrawals %></p>
-        <small>Total cash removed</small>
+      <article class="bankroll-signal-card">
+        <span>Net betting P/L</span>
+        <strong class="<%= Number(summary.netProfit.replace(/,/g, '')) >= 0 ? 'positive' : 'negative' %>">
+          <%= Number(summary.netProfit.replace(/,/g, '')) >= 0 ? '+' : '-' %>$<%= Math.abs(Number(summary.netProfit.replace(/,/g, ''))).toFixed(2) %>
+        </strong>
       </article>
     </div>
   </section>
 
-  <section class="card dashboard-trend-card">
-    <div class="preview-section-header">
-      <div>
-        <span class="section-label">Bankroll Trend</span>
-        <strong>Starting point to current number</strong>
+  <section class="bankroll-workspace-grid">
+    <article class="card bankroll-work-card">
+      <div class="bankroll-card-head">
+        <div>
+          <p class="bankroll-card-kicker">Settings</p>
+          <h2>Core bankroll setup</h2>
+        </div>
+        <span>Only the base numbers you need to maintain.</span>
       </div>
-      <span class="delta-pill <%= Number(summary.currentBankroll) >= Number(summary.startingBankroll) ? 'positive' : 'negative' %>">
-        Peak $<%= summary.peakBankroll %>
-      </span>
-    </div>
 
-    <% if (!bankrollTimeline.length) { %>
-      <div class="dashboard-empty-state">
-        <p class="muted">No bankroll movement yet. Add a bet result or log a deposit/withdrawal to start the chart.</p>
-      </div>
-    <% } else { %>
-      <div class="dashboard-trend-summary">
-        <article class="dashboard-trend-metric">
-          <span>Starting bankroll</span>
-          <strong>$<%= summary.startingBankroll %></strong>
-          <small>Original baseline</small>
-        </article>
-        <article class="dashboard-trend-metric">
-          <span>Lowest point</span>
-          <strong>$<%= summary.lowBankroll %></strong>
-          <small>Largest drawdown: $<%= summary.drawdown %></small>
-        </article>
-        <article class="dashboard-trend-metric">
-          <span>Average stake</span>
-          <strong>$<%= summary.averageStake %></strong>
-          <small>Recent average risk per ticket</small>
-        </article>
-      </div>
-      <div class="dashboard-trend-chart" data-bankroll-chart data-points='<%- JSON.stringify(bankrollTimeline) %>' aria-label="Bankroll timeline chart"></div>
-    <% } %>
-  </section>
-
-  <section class="stats-section-grid">
-    <article class="card">
-      <div class="preview-subheader">
-        <strong>Bankroll Settings</strong>
-        <span>Set the baseline and your current unit</span>
-      </div>
       <form method="POST" action="/settings/bankroll" class="form-grid two-col">
         <label>
           Starting Bankroll ($)
@@ -87,15 +50,19 @@
           <input type="number" step="0.01" min="0.01" name="unitSize" value="<%= profile.unitSize.toFixed(2) %>" required />
         </label>
 
-        <button class="btn full" type="submit">Save Settings</button>
+        <button class="btn full" type="submit">Save Bankroll Settings</button>
       </form>
     </article>
 
-    <article class="card">
-      <div class="preview-subheader">
-        <strong>Cash Movements</strong>
-        <span>Log deposits and withdrawals separately from bets</span>
+    <article class="card bankroll-work-card bankroll-work-card-accent">
+      <div class="bankroll-card-head">
+        <div>
+          <p class="bankroll-card-kicker">Adjustments</p>
+          <h2>Log cash movement</h2>
+        </div>
+        <span>Use this only for deposits and withdrawals outside of bets.</span>
       </div>
+
       <form method="POST" action="/settings/bankroll/transactions" class="form-grid two-col">
         <label>
           Type
@@ -117,152 +84,63 @@
 
         <label>
           Notes
-          <input type="text" name="notes" value="<%= transactionForm.notes %>" placeholder="Paycheck deposit, cashout, transfer" />
+          <input type="text" name="notes" value="<%= transactionForm.notes %>" placeholder="Optional note" />
         </label>
 
         <button class="btn full" type="submit">Save Adjustment</button>
       </form>
     </article>
+  </section>
 
-    <article class="card stats-table-card">
-      <div class="preview-subheader">
-        <strong>Unit Recommendations</strong>
-        <span>Quick sizing anchors based on your current bankroll</span>
+  <section class="card bankroll-log-card">
+    <div class="bankroll-card-head bankroll-card-head-log">
+      <div>
+        <p class="bankroll-card-kicker">History</p>
+        <h2>Adjustment log</h2>
       </div>
-      <div class="bankroll-recommendation-list">
-        <% unitRecommendations.forEach((recommendation) => { %>
-          <article class="bankroll-recommendation-card">
-            <span class="section-label"><%= recommendation.label %></span>
-            <strong>$<%= recommendation.amount %></strong>
-            <span><%= recommendation.note %></span>
-          </article>
-        <% }) %>
-      </div>
-    </article>
+      <span><%= transactions.length %> recorded movement<%= transactions.length === 1 ? '' : 's' %></span>
+    </div>
 
-    <article class="card stats-table-card">
-      <div class="preview-subheader">
-        <strong>Adjustment Log</strong>
-        <span><%= transactions.length %> recorded movements</span>
+    <% if (!transactions.length) { %>
+      <div class="bankroll-empty-state">
+        <p class="muted">No deposits or withdrawals yet. When you add one, it will appear here.</p>
       </div>
-      <% if (!transactions.length) { %>
-        <p class="muted">No deposits or withdrawals yet. Add one to keep bankroll reporting honest.</p>
-      <% } else { %>
-        <div class="table-wrap">
-          <table>
-            <thead>
+    <% } else { %>
+      <div class="table-wrap bankroll-log-table-wrap">
+        <table class="bankroll-log-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Notes</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% transactions.forEach((transaction) => { %>
               <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Amount</th>
-                <th>Notes</th>
-                <th>Actions</th>
+                <td><%= new Date(transaction.transactionDate).toISOString().slice(0, 10) %></td>
+                <td>
+                  <span class="bankroll-type-pill bankroll-type-pill-<%= transaction.transactionType %>">
+                    <%= transaction.transactionType === 'deposit' ? 'Deposit' : 'Withdrawal' %>
+                  </span>
+                </td>
+                <td class="<%= transaction.transactionType === 'deposit' ? 'positive' : 'negative' %>">
+                  <%= transaction.transactionType === 'deposit' ? '+' : '-' %>$<%= Number(transaction.amount).toFixed(2) %>
+                </td>
+                <td><%= transaction.notes || '-' %></td>
+                <td>
+                  <form method="POST" action="/settings/bankroll/transactions/<%= transaction.id %>/delete" class="inline-form" onsubmit="return confirm('Delete this bankroll adjustment?');">
+                    <button type="submit" class="bankroll-delete-btn">Delete</button>
+                  </form>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              <% transactions.forEach((transaction) => { %>
-                <tr>
-                  <td><%= new Date(transaction.transactionDate).toISOString().slice(0, 10) %></td>
-                  <td><%= transaction.transactionType === 'deposit' ? 'Deposit' : 'Withdrawal' %></td>
-                  <td class="<%= transaction.transactionType === 'deposit' ? 'positive' : 'negative' %>">
-                    <%= transaction.transactionType === 'deposit' ? '+' : '-' %>$<%= Number(transaction.amount).toFixed(2) %>
-                  </td>
-                  <td><%= transaction.notes || '-' %></td>
-                  <td>
-                    <form method="POST" action="/settings/bankroll/transactions/<%= transaction.id %>/delete" class="inline-form" onsubmit="return confirm('Delete this bankroll adjustment?');">
-                      <button type="submit" class="link-btn danger">Delete</button>
-                    </form>
-                  </td>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
-        </div>
-      <% } %>
-    </article>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
   </section>
 </section>
-
-<script>
-  document.querySelectorAll('[data-bankroll-chart]').forEach((chart) => {
-    const points = JSON.parse(chart.getAttribute('data-points') || '[]');
-    if (!points.length) return;
-
-    const values = points.map((point) => Number(point.bankroll));
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const width = 100;
-    const height = 100;
-    const step = points.length > 1 ? width / (points.length - 1) : width;
-    const range = max - min || 1;
-
-    const linePoints = points.map((point, index) => {
-      const x = points.length > 1 ? index * step : width / 2;
-      const y = height - (((Number(point.bankroll) - min) / range) * 76 + 12);
-      return {
-        x: x.toFixed(2),
-        y: y.toFixed(2),
-      };
-    });
-
-    const areaPoints = ['0,100', ...linePoints.map((point) => `${point.x},${point.y}`), `${width},100`].join(' ');
-
-    chart.innerHTML = `
-      <div class="dashboard-chart-tooltip" hidden></div>
-      <svg viewBox="0 0 100 100" role="img" aria-hidden="true" preserveAspectRatio="none">
-        <polyline class="dashboard-trend-area" points="${areaPoints}"></polyline>
-        <polyline class="dashboard-trend-line" points="${linePoints.map((point) => `${point.x},${point.y}`).join(' ')}"></polyline>
-        ${linePoints.map((point, index) => `
-          <circle
-            class="dashboard-trend-point"
-            cx="${point.x}"
-            cy="${point.y}"
-            r="2.4"
-            data-point-index="${index}"
-            tabindex="0"
-          ></circle>
-        `).join('')}
-      </svg>
-      <div class="chart-axis dashboard-chart-axis">
-        <span>${points[0]?.label || ''}</span>
-        <span>${points[Math.floor((points.length - 1) / 2)]?.label || ''}</span>
-        <span>${points[points.length - 1]?.label || ''}</span>
-      </div>
-    `;
-
-    const tooltip = chart.querySelector('.dashboard-chart-tooltip');
-    const pointNodes = chart.querySelectorAll('[data-point-index]');
-
-    const showTooltip = (pointIndex, target) => {
-      const point = points[Number(pointIndex)];
-      if (!point || !tooltip || !target) return;
-
-      tooltip.innerHTML = `
-        <strong>${point.label}</strong>
-        <span>Bankroll: $${Number(point.bankroll).toFixed(2)}</span>
-        <span>Change: ${Number(point.delta) >= 0 ? '+' : ''}$${Number(point.delta).toFixed(2)}</span>
-        <span>Source: ${point.type}</span>
-      `;
-
-      tooltip.hidden = false;
-      const targetRect = target.getBoundingClientRect();
-      const chartRect = chart.getBoundingClientRect();
-      tooltip.style.left = `${targetRect.left - chartRect.left}px`;
-      tooltip.style.top = `${targetRect.top - chartRect.top - 12}px`;
-    };
-
-    const hideTooltip = () => {
-      if (tooltip) {
-        tooltip.hidden = true;
-      }
-    };
-
-    pointNodes.forEach((pointNode) => {
-      pointNode.addEventListener('mouseenter', () => showTooltip(pointNode.dataset.pointIndex, pointNode));
-      pointNode.addEventListener('focus', () => showTooltip(pointNode.dataset.pointIndex, pointNode));
-      pointNode.addEventListener('mouseleave', hideTooltip);
-      pointNode.addEventListener('blur', hideTooltip);
-    });
-  });
-</script>
 <%- include('../partials/footer') %>

@@ -1,0 +1,307 @@
+<section class="card stats-hero stats-hero-upgraded">
+  <div class="stats-hero-top">
+    <div class="stats-hero-copy">
+      <p class="eyebrow">Performance Stats</p>
+      <h1>Your betting performance, clearly organized.</h1>
+      <div class="stats-hero-actions">
+        <a href="/bets/new" class="btn">Log a new bet</a>
+        <a href="/bets/history" class="btn btn-secondary">Review history</a>
+      </div>
+    </div>
+
+    <article class="stats-story-card stats-story-card-primary">
+      <span class="section-label">Window summary</span>
+      <strong class="<%= summary.netProfit >= 0 ? 'positive' : 'negative' %>"><%= summary.netProfit >= 0 ? 'Positive read' : 'Pressure point' %></strong>
+      <p><%= statsStory %></p>
+    </article>
+  </div>
+</section>
+
+<section class="card stats-filter-card">
+  <details class="stats-filter-details" <%= filters.filtersOpen ? 'open' : '' %>>
+    <summary class="stats-filter-summary">
+      <span>
+        <strong>Adjust the stats window</strong>
+        <small><%= filterLabel %></small>
+      </span>
+      <span class="stats-filter-summary-label" data-stats-filter-toggle-label>Show Filters</span>
+    </summary>
+
+    <form method="GET" action="/stats" class="form-grid dashboard-filter-grid stats-filter-grid" data-stats-async-form>
+      <input type="hidden" name="filtersOpen" value="<%= filters.filtersOpen ? '1' : '0' %>" data-stats-filters-open-input>
+      <label>
+        Range
+        <select name="range">
+          <option value="7d" <%= filters.range === '7d' ? 'selected' : '' %>>Last 7 days</option>
+          <option value="30d" <%= filters.range === '30d' ? 'selected' : '' %>>Last 30 days</option>
+          <option value="90d" <%= filters.range === '90d' ? 'selected' : '' %>>Last 90 days</option>
+          <option value="month" <%= filters.range === 'month' ? 'selected' : '' %>>This month</option>
+          <option value="year" <%= filters.range === 'year' ? 'selected' : '' %>>This year</option>
+          <option value="all" <%= filters.range === 'all' ? 'selected' : '' %>>All time</option>
+          <option value="custom" <%= filters.range === 'custom' ? 'selected' : '' %>>Custom range</option>
+        </select>
+      </label>
+      <label>
+        Start Date
+        <input type="date" name="startDate" value="<%= filters.startDateValue %>" <%= filters.isCustom ? '' : 'disabled' %>>
+      </label>
+      <label>
+        End Date
+        <input type="date" name="endDate" value="<%= filters.endDateValue %>" <%= filters.isCustom ? '' : 'disabled' %>>
+      </label>
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-small">Apply</button>
+        <a href="/stats?filtersOpen=1" class="btn btn-secondary btn-small" data-stats-async-link>Reset</a>
+      </div>
+    </form>
+  </details>
+</section>
+
+<section class="card stats-stage" data-stats-stage>
+  <div class="stats-stage-bar">
+    <div class="stats-stage-copy">
+      <small data-stats-stage-caption>Core numbers for the current window.</small>
+    </div>
+
+    <div class="stats-stage-controls">
+      <button type="button" class="stats-stage-arrow stats-stage-arrow-side" data-stats-stage-arrow="prev" aria-label="Previous stats view">
+        <span aria-hidden="true">&larr;</span>
+      </button>
+      <div class="stats-stage-pills" role="tablist" aria-label="Stats views">
+        <button type="button" class="stats-stage-pill is-active" data-stats-stage-trigger="main" role="tab" aria-selected="true">Main Stats</button>
+        <button type="button" class="stats-stage-pill" data-stats-stage-trigger="edges" role="tab" aria-selected="false">Best vs Worst</button>
+        <button type="button" class="stats-stage-pill" data-stats-stage-trigger="deep-dive" role="tab" aria-selected="false">Deep Dive</button>
+      </div>
+      <button type="button" class="stats-stage-arrow stats-stage-arrow-side" data-stats-stage-arrow="next" aria-label="Next stats view">
+        <span aria-hidden="true">&rarr;</span>
+      </button>
+    </div>
+  </div>
+
+  <section class="stats-stage-panel" data-stats-stage-panel="main">
+    <div class="stats-grid stats-overview-grid stats-overview-grid-upgraded">
+      <article class="card stat-card stat-card-featured">
+        <span class="section-label">Net profit</span>
+        <p class="<%= summary.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(summary.netProfit).toFixed(2) %></p>
+        <small><%= summary.roi %>% ROI across <%= summary.totalBets %> bets</small>
+      </article>
+      <article class="card stat-card">
+        <span class="section-label">Record</span>
+        <p><%= summary.wins %>-<%= summary.losses %>-<%= summary.pushes %></p>
+        <small><%= summary.winRate %>% win rate</small>
+      </article>
+      <article class="card stat-card">
+        <span class="section-label">Total stake</span>
+        <p>$<%= Number(summary.totalStake).toFixed(2) %></p>
+        <small>$<%= Number(summary.averageStake).toFixed(2) %> average stake</small>
+      </article>
+      <article class="card stat-card">
+        <span class="section-label">Current streak</span>
+        <p><%= summary.currentStreak.label %></p>
+        <small><%= summary.units %>u overall</small>
+      </article>
+      <article class="card stat-card">
+        <span class="section-label">Biggest win</span>
+        <p class="<%= summary.biggestWin >= 0 ? 'positive' : 'negative' %>">$<%= Number(summary.biggestWin).toFixed(2) %></p>
+        <small>Best single-ticket result in this window</small>
+      </article>
+      <article class="card stat-card">
+        <span class="section-label">Biggest loss</span>
+        <p class="<%= summary.biggestLoss <= 0 ? 'negative' : 'positive' %>">$<%= Number(summary.biggestLoss).toFixed(2) %></p>
+        <small>Largest hit taken in this window</small>
+      </article>
+    </div>
+  </section>
+
+  <section class="stats-stage-panel" data-stats-stage-panel="edges" hidden>
+    <div class="stats-comparison-grid">
+      <section class="stats-comparison-column">
+        <div class="preview-subheader">
+          <div>
+            <strong>Best</strong>
+            <span>Where the strongest returns are showing up.</span>
+          </div>
+        </div>
+        <article class="card insight-card">
+          <p class="eyebrow">Sport</p>
+          <% if (!highlights.bestSport) { %>
+            <p class="muted">No sport breakdown yet in this window.</p>
+          <% } else { %>
+            <h3><%= highlights.bestSport.key %></h3>
+            <p class="insight-number <%= highlights.bestSport.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(highlights.bestSport.netProfit).toFixed(2) %></p>
+            <p class="muted"><%= highlights.bestSport.totalBets %> bets | <%= highlights.bestSport.roi %>% ROI | <%= highlights.bestSport.units %>u</p>
+          <% } %>
+        </article>
+        <article class="card insight-card">
+          <p class="eyebrow">Sportsbook</p>
+          <% if (!highlights.bestSportsbook) { %>
+            <p class="muted">Track sportsbook names on new bets to compare books here.</p>
+          <% } else { %>
+            <h3><%= highlights.bestSportsbook.key %></h3>
+            <p class="insight-number <%= highlights.bestSportsbook.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(highlights.bestSportsbook.netProfit).toFixed(2) %></p>
+            <p class="muted"><%= highlights.bestSportsbook.totalBets %> bets | <%= highlights.bestSportsbook.roi %>% ROI | <%= highlights.bestSportsbook.units %>u</p>
+          <% } %>
+        </article>
+        <article class="card insight-card">
+          <p class="eyebrow">Bet Type</p>
+          <% if (!highlights.bestBetType) { %>
+            <p class="muted">No bet type leader yet in this window.</p>
+          <% } else { %>
+            <h3><%= highlights.bestBetType.betType %></h3>
+            <p class="insight-number <%= highlights.bestBetType.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(highlights.bestBetType.netProfit).toFixed(2) %></p>
+            <p class="muted"><%= highlights.bestBetType.totalBets %> bets | <%= highlights.bestBetType.roi %>% ROI | <%= highlights.bestBetType.units %>u</p>
+          <% } %>
+        </article>
+      </section>
+
+      <section class="stats-comparison-column">
+        <div class="preview-subheader">
+          <div>
+            <strong>Worst</strong>
+            <span>Where the current window is leaking the most.</span>
+          </div>
+        </div>
+        <article class="card insight-card">
+          <p class="eyebrow">Sport</p>
+          <% if (!highlights.worstSport) { %>
+            <p class="muted">More sport volume will surface a weak spot.</p>
+          <% } else { %>
+            <h3><%= highlights.worstSport.key %></h3>
+            <p class="insight-number <%= highlights.worstSport.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(highlights.worstSport.netProfit).toFixed(2) %></p>
+            <p class="muted"><%= highlights.worstSport.totalBets %> bets | <%= highlights.worstSport.roi %>% ROI | <%= highlights.worstSport.units %>u</p>
+          <% } %>
+        </article>
+        <article class="card insight-card">
+          <p class="eyebrow">Sportsbook</p>
+          <% if (!highlights.worstSportsbook) { %>
+            <p class="muted">Once a few books are tracked, the weakest one will show up here.</p>
+          <% } else { %>
+            <h3><%= highlights.worstSportsbook.key %></h3>
+            <p class="insight-number <%= highlights.worstSportsbook.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(highlights.worstSportsbook.netProfit).toFixed(2) %></p>
+            <p class="muted"><%= highlights.worstSportsbook.totalBets %> bets | <%= highlights.worstSportsbook.roi %>% ROI | <%= highlights.worstSportsbook.units %>u</p>
+          <% } %>
+        </article>
+        <article class="card insight-card">
+          <p class="eyebrow">Bet Type</p>
+          <% if (!highlights.worstBetType) { %>
+            <p class="muted">More category depth will reveal what is dragging results down.</p>
+          <% } else { %>
+            <h3><%= highlights.worstBetType.betType %></h3>
+            <p class="insight-number <%= highlights.worstBetType.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= Number(highlights.worstBetType.netProfit).toFixed(2) %></p>
+            <p class="muted"><%= highlights.worstBetType.totalBets %> bets | <%= highlights.worstBetType.roi %>% ROI | <%= highlights.worstBetType.units %>u</p>
+          <% } %>
+        </article>
+      </section>
+    </div>
+  </section>
+
+  <section class="stats-stage-panel" data-stats-stage-panel="deep-dive" hidden>
+    <div class="stats-deep-dive-grid">
+      <article class="card stats-month-callouts">
+        <div class="preview-subheader">
+          <div>
+            <strong>Monthly read</strong>
+            <span>Best and worst stretches in this view.</span>
+          </div>
+          <span class="stats-sample-note">Small samples can swing quickly.</span>
+        </div>
+
+        <div class="stats-month-callout-grid">
+          <article class="stats-month-chip">
+            <span class="section-label">Best month</span>
+            <strong><%= bestMonth ? bestMonth.label : 'No month yet' %></strong>
+            <small>
+              <% if (bestMonth) { %>
+                <span class="positive">$<%= Number(bestMonth.netProfit).toFixed(2) %></span>
+                |
+                <span class="<%= Number(bestMonth.roi) >= 0 ? 'positive' : 'negative' %>"><%= bestMonth.roi %>% ROI</span>
+                | <%= bestMonth.totalBets %> bets
+              <% } else { %>
+                Add settled bets to build your monthly trend.
+              <% } %>
+            </small>
+          </article>
+          <article class="stats-month-chip">
+            <span class="section-label">Worst month</span>
+            <strong><%= worstMonth ? worstMonth.label : 'No month yet' %></strong>
+            <small>
+              <% if (worstMonth) { %>
+                <span class="<%= Number(worstMonth.netProfit) >= 0 ? 'positive' : 'negative' %>">$<%= Number(worstMonth.netProfit).toFixed(2) %></span>
+                |
+                <span class="<%= Number(worstMonth.roi) >= 0 ? 'positive' : 'negative' %>"><%= worstMonth.roi %>% ROI</span>
+                | <%= worstMonth.totalBets %> bets
+              <% } else { %>
+                A weak month will appear once your history is deeper.
+              <% } %>
+            </small>
+          </article>
+        </div>
+      </article>
+
+      <article class="card stats-table-card">
+        <div class="preview-subheader">
+          <div>
+            <strong>Bankroll snapshot</strong>
+            <span>All-time context beside the current window.</span>
+          </div>
+        </div>
+        <div class="stats-bankroll-grid">
+          <div class="stats-bankroll-item">
+            <span>Current bankroll</span>
+            <strong class="<%= Number(bankrollSnapshot.currentBankroll) >= 0 ? 'positive' : 'negative' %>">$<%= Number(bankrollSnapshot.currentBankroll).toFixed(2) %></strong>
+          </div>
+          <div class="stats-bankroll-item">
+            <span>Peak bankroll</span>
+            <strong class="<%= Number(bankrollSnapshot.peakBankroll) >= 0 ? 'positive' : 'negative' %>">$<%= Number(bankrollSnapshot.peakBankroll).toFixed(2) %></strong>
+          </div>
+          <div class="stats-bankroll-item">
+            <span>Drawdown</span>
+            <strong class="<%= bankrollSnapshot.drawdown > 0 ? 'negative' : '' %>">$<%= Number(bankrollSnapshot.drawdown).toFixed(2) %></strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="card stats-table-card stats-deep-dive-table">
+        <div class="preview-subheader">
+          <div>
+            <strong>Monthly recap</strong>
+            <span><%= monthlyRecap.length %> months tracked in this view</span>
+          </div>
+        </div>
+        <% if (!monthlyRecap.length) { %>
+          <p class="muted">No monthly recap yet. Add settled bets to build your trend history.</p>
+        <% } else { %>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Month</th><th>Bets</th><th>Win %</th><th>ROI</th><th>Units</th><th>Net</th></tr></thead>
+              <tbody>
+              <% monthlyRecap.forEach((row) => { %>
+                <tr>
+                  <td><%= row.label %></td>
+                  <td><%= row.totalBets %></td>
+                  <td><%= row.winRate %>%</td>
+                  <td class="<%= Number(row.roi) >= 0 ? 'positive' : 'negative' %>"><%= row.roi %>%</td>
+                  <td class="<%= Number(row.units) >= 0 ? 'positive' : 'negative' %>"><%= row.units %>u</td>
+                  <td class="<%= row.netProfit >= 0 ? 'positive' : 'negative' %>"><%= Number(row.netProfit) >= 0 ? '+' : '-' %>$<%= Math.abs(Number(row.netProfit)).toFixed(2) %></td>
+                </tr>
+              <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </article>
+
+      <section class="card stats-summary-band stats-summary-band-sidebar">
+        <div class="stats-summary-band-copy">
+          <span class="section-label">Bottom line</span>
+          <strong>Keep the page focused on decision-making.</strong>
+          <p><%= statsStory %></p>
+        </div>
+        <div class="stats-summary-band-actions">
+          <a href="/bets/new" class="btn">Add bet</a>
+          <a href="/bets/history" class="btn btn-secondary">Open history</a>
+        </div>
+      </section>
+    </div>
+  </section>
+</section>
