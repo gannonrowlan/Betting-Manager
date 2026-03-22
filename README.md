@@ -1,525 +1,393 @@
-1. Pick your stack
+Here’s a real Bankroll IQ business roadmap from where you are now to actual revenue.
 
-I’d use:
+1. The business model I’d use
 
-Node.js
+Start as a web SaaS first.
 
-Express
+Your first version should be:
 
-PostgreSQL or MySQL
+Free
+Pro Monthly
+Pro Annual
 
-EJS if you want fast server-rendered pages, or a separate frontend later
+Use Stripe on the web for payments. Stripe’s standard pricing is pay-as-you-go, and Stripe Billing is built for subscriptions, which makes it the cleanest early setup for a small SaaS.
 
-Chart.js for graphs
+Recommended pricing
 
-Stripe later for subscriptions
+I would start with:
 
-Express is still the standard lightweight choice for building routes and APIs, and its routing model is documented around app.get, app.post, and modular routers.
+Free — $0
+Pro Monthly — $9.99/month
+Pro Annual — $79.99/year
 
-For your app, I would begin with server-rendered EJS because it is faster to launch than building a full React frontend right away.
+Why this works:
 
-2. Create the project
-
-In terminal:
-
-mkdir bankroll-app
-cd bankroll-app
-npm init -y
-npm install express ejs dotenv express-session bcrypt
-npm install mysql2
-npm install --save-dev nodemon
-
-If you want PostgreSQL instead of MySQL:
-
-npm install pg
-
-Node’s official docs recommend using the current supported releases and npm-based project setup.
-
-Then in package.json, make scripts like this:
-
-"scripts": {
-  "dev": "nodemon src/server.js",
-  "start": "node src/server.js"
-}
-3. Use a real folder structure from day one
-
-Do not keep everything in one file.
-
-Use this:
-
-bankroll-app/
-├── package.json
-├── .env
-├── src/
-│   ├── server.js
-│   ├── app.js
-│   ├── config/
-│   │   └── db.js
-│   ├── routes/
-│   │   ├── authRoutes.js
-│   │   ├── dashboardRoutes.js
-│   │   └── betRoutes.js
-│   ├── controllers/
-│   │   ├── authController.js
-│   │   ├── dashboardController.js
-│   │   └── betController.js
-│   ├── services/
-│   │   ├── statsService.js
-│   │   └── bankrollService.js
-│   ├── middleware/
-│   │   ├── authMiddleware.js
-│   │   └── errorMiddleware.js
-│   ├── models/
-│   │   ├── userModel.js
-│   │   └── betModel.js
-│   ├── views/
-│   │   ├── partials/
-│   │   ├── auth/
-│   │   ├── dashboard/
-│   │   └── bets/
-│   └── public/
-│       ├── css/
-│       └── js/
-
-That gives you room to grow without turning the project into spaghetti.
-
-4. Build the smallest useful version first
-
-Your MVP should be very small.
-
-Version 1 pages
-
-Build only these:
-
-Landing page
-
-Register / login
-
-Dashboard
-
-Add bet page
-
-Bet history page
-
-Edit/delete bet
-
-Basic stats page
-
-Version 1 features
-
-Only include:
-
-user accounts
-
-bankroll amount
-
-add a bet
-
-mark win/loss/push
-
-track odds
-
-track stake
-
-track sport
-
-track bet type
-
-total profit/loss
-
-ROI
-
-win rate
-
-filters by sport and date
-
-That is enough to prove the idea.
-
-5. Start with the database schema
-
-You need very few tables at first.
-
-users
-id
-name
-email
-password_hash
-created_at
-bankrolls
-id
-user_id
-starting_bankroll
-current_bankroll
-unit_size
-created_at
-updated_at
-bets
-id
-user_id
-sport
-bet_type
-event_name
-sportsbook
-odds
-stake
-to_win
-result
-placed_at
-settled_at
-notes
-created_at
-updated_at
-bet_tags later
-
-For tags like:
-
-live bet
-
-parlay
-
-promo
-
-hedge
-
-model play
-
-Do not overbuild the schema at the start.
-
-6. Make the first Express setup
-src/server.js
-require('dotenv').config();
-const app = require('./app');
-
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-src/app.js
-const express = require('express');
-const path = require('path');
-const session = require('express-session');
-
-const authRoutes = require('./routes/authRoutes');
-const dashboardRoutes = require('./routes/dashboardRoutes');
-const betRoutes = require('./routes/betRoutes');
-
-const app = express();
-
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false
-}));
-
-app.use('/', authRoutes);
-app.use('/dashboard', dashboardRoutes);
-app.use('/bets', betRoutes);
-
-app.get('/', (req, res) => {
-  res.render('home');
-});
-
-module.exports = app;
-
-Express’ docs show this route-based structure clearly, and the official session middleware docs warn that the default MemoryStore is not for production and should only be used for development/debugging.
-
-So for development, this is fine. For production, move session storage to a proper store.
-
-7. Make the first routes
-src/routes/betRoutes.js
-const express = require('express');
-const router = express.Router();
-const betController = require('../controllers/betController');
-const authMiddleware = require('../middleware/authMiddleware');
-
-router.get('/', authMiddleware, betController.listBets);
-router.get('/new', authMiddleware, betController.showNewForm);
-router.post('/new', authMiddleware, betController.createBet);
-router.post('/:id/update', authMiddleware, betController.updateBet);
-router.post('/:id/delete', authMiddleware, betController.deleteBet);
-
-module.exports = router;
-
-This matches Express’ documented router pattern for modular route handling.
-
-8. Build the app in this order
-
-This is the order I would use:
-
-Phase 1
-
-create project
-
-connect database
-
-make users table
-
-make bets table
-
-register/login/logout
-
-protect routes
-
-Phase 2
-
-add bet form
-
-bet history page
-
-dashboard cards:
-
-total bets
-
-wins/losses
-
-profit/loss
-
-ROI
-
-Phase 3
-
-charts
-
-filters
-
-edit/delete
-
-bankroll settings
-
-unit size tracking
-
-Phase 4
-
-CSV import
-
-advanced analytics
-
-CLV tracking
-
-tax summaries
-
-Stripe billing
-
-Do not start with subscriptions first. Get a useful product first.
-
-9. Decide whether this is MVC or layered
-
-I would do a light layered structure:
-
-routes = endpoints
-
-controllers = request/response handling
-
-services = business logic, calculations
-
-models = DB queries
+cheap enough for serious hobby bettors
+high enough that a small number of users still matters
+annual plan improves cash flow
 
 Example:
 
-betController.createBet() handles the form submission
+25 paid users at $9.99/month ≈ $250/month gross
+100 paid users at $9.99/month ≈ $1,000/month gross
+250 paid users at $9.99/month ≈ $2,500/month gross
+
+That is enough to pay for hosting, domain, email, monitoring, and still validate that it is becoming a real business.
+
+2. What users should pay for
+
+Do not sell “a place to log bets.”
+
+Sell outcomes like:
+
+“Know your real ROI”
+“See where you actually win and lose”
+“Control bankroll risk”
+“Replace messy spreadsheets”
+“Track discipline over time”
+
+That means your paid features should center on insight, not just storage.
+
+Free plan
+
+Give enough value to make it useful, but not enough to kill upgrades.
+
+I’d gate it like this:
+
+up to 75 bets per month
+1 bankroll profile
+basic dashboard
+win rate, units, profit/loss
+simple bankroll chart
+filters by sport and sportsbook
+mobile web access
+Pro plan
 
-betModel.insertBet() writes to DB
+This is where the real value lives:
 
-statsService.calculateROI() handles formulas
+unlimited bets
+unlimited date history
+advanced dashboard
+ROI by sport / market / sportsbook / bet type
+CLV tracking
+streak analysis
+bankroll rules and risk alerts
+custom tags
+CSV import/export
+tax-ready export
+saved filters/views
+notes and screenshots
+performance calendar
+“best/worst market” insights
+goal tracking
+
+That is enough separation for people to actually convert.
+
+3. Your launch order
+Phase 1: Finish the MVP locally
+
+Before spending on public launch, make sure these are strong:
+
+auth
+password reset
+add/edit/delete bets
+bankroll history
+filters
+charts
+responsive mobile layout
+stable database writes
+backups
+basic security
+
+Your product must already beat a spreadsheet in speed and clarity.
+
+Phase 2: Buy domain + deploy public web app
+
+Once the product is stable:
+
+buy your domain
+deploy to a real server
+move to production database
+add HTTPS
+add logging
+add monitoring
+add backups
+add error pages
+add analytics
+Phase 3: Add payments
+
+After users can already get value:
+
+add Stripe Checkout
+add monthly + annual plans
+store user subscription tier in DB
+use webhooks to activate/cancel plans
+add billing/settings page
+Phase 4: Get first 20–50 users
 
-That keeps calculations out of routes.
+This is the real validation phase.
+Your goal is not “go viral.”
+Your goal is:
 
-10. Know your core formulas early
+20–50 real users
+5–15 weekly active users
+first 3–10 paying users
+learn what they use most
+tighten free vs paid gates
+Phase 5: Improve retention
 
-This app lives or dies on stats being right.
+Once a few people pay, optimize for staying:
 
-At minimum:
+weekly summary emails
+monthly performance recap
+bankroll milestone tracking
+reminders to log bets
+insights like “you perform worst on same-game parlays” or “best ROI is live unders”
 
-Profit/Loss
+That is where SaaS gets sticky.
 
-For each bet:
+Phase 6: Mobile app later
 
-win: positive return
+Once web revenue is real, then decide:
 
-loss: negative stake
+responsive web only
+PWA first
+native iPhone app later
 
-push: 0
+That order is safer than jumping straight to App Store.
 
-ROI
-ROI = total profit / total amount risked
-Win rate
-Win rate = wins / (wins + losses)
-Unit performance
-Units won/lost = total profit / unit size
+4. Best tech stack for the first paid version
 
-Keep this logic in a statsService.js.
+Since you are already building web software, I’d keep it simple.
 
-11. Your first pages should feel clean
+Suggested stack
+Frontend/server-rendered app: Node.js + Express + EJS
+Database: PostgreSQL or MySQL
+ORM/query layer: Prisma or a clean service/repository layer
+Auth: session auth or token auth with secure cookies
+Payments: Stripe
+Email: Resend / Postmark / SendGrid
+Hosting: Render, Railway, DigitalOcean, or a small VPS
+Object storage: Cloudinary or S3 if you later support screenshots/import files
+Monitoring: Sentry
+Analytics: PostHog, Plausible, or GA4
+What I’d personally choose for your stage
+Domain: Namecheap or Cloudflare Registrar
+Hosting: Render or DigitalOcean
+DB: Managed Postgres
+Payments: Stripe
+Transactional email: Postmark or Resend
+Error logging: Sentry
+
+That is enough to run a real product without overengineering it.
+
+5. Your likely monthly costs early on
+
+A rough early stack could look like:
+
+domain: ~$10–20/year
+hosting: ~$7–30/month
+DB: ~$0–25/month early
+email: low or free at first
+Stripe: per transaction
+monitoring/analytics: free or low-cost tiers at first
+
+So you can realistically launch lean and probably keep early fixed costs modest while you test demand. Stripe’s standard model is usage-based rather than a required monthly platform fee.
+
+6. What monetization actually looks like in practice
+
+You need a conversion funnel.
+
+Your funnel should be:
+visitor sees landing page
+signs up free
+logs first 3–10 bets
+sees value in dashboard
+hits a feature/paywall limit
+upgrades to Pro
+Best upgrade triggers
 
-You do not need fancy design yet.
+The upgrade should happen at moments like:
 
-Just make these sections:
+“You’ve reached your monthly free bet limit”
+“Unlock ROI by sportsbook”
+“Unlock market performance analysis”
+“Export your full betting history”
+“Unlock CLV and edge tracking”
+
+That is much stronger than a generic “go Pro” button.
+
+7. What your landing page should sell
+
+Your homepage should probably focus on 3 promises:
 
-Dashboard
+Message 1
 
-bankroll card
+Track every bet in one place
 
-today / week / month profit
+Message 2
 
-win/loss record
+See your real profitability
 
-ROI
+Message 3
 
-recent bets
+Manage bankroll like an investor, not a gambler
 
-chart of cumulative profit
+Then support that with:
 
-Add Bet Form
+dashboard screenshots
+sample ROI charts
+bankroll graph
+feature comparison
+testimonial quotes later
+strong CTA
 
-sport
+Your CTA should not be vague.
+Use:
 
-event
+“Start Tracking Free”
+“See Your Betting Edge”
+“Build a Smarter Bankroll”
+8. The exact features I would build in order
+Must-have before public launch
+user auth
+add/edit/delete bets
+sportsbook selection
+sport / market / odds / stake / result fields
+bankroll snapshots
+dashboard summary
+filtering
+mobile responsiveness
+secure production deployment
+Must-have before charging
+subscription logic
+free tier limits
+advanced analytics locked behind Pro
+billing/settings page
+CSV export
+stable onboarding flow
+clean landing page
+Must-have before real growth
+CSV import from spreadsheets
+recurring email summaries
+deeper insights
+referral system
+onboarding walkthrough
+feedback capture inside app
+9. Your best first differentiators
 
-sportsbook
+A lot of bet trackers exist, so you need a wedge.
 
-bet type
+Your strongest possible differentiators are probably:
 
-odds
+cleaner UX than spreadsheets
+better mobile logging
+better bankroll-focused insights
+discipline tools instead of just stats
+“what are my leaks?” style analysis
+simple serious-bettor branding
 
-stake
+That is better than trying to compete on “we have every feature possible.”
 
-result
+10. How to know when you are ready to charge
 
-notes
+You are ready when:
 
-Bet History
+users come back without being asked
+users log bets consistently
+they check the dashboard after results settle
+they ask for exports, analytics, or deeper filters
+at least a few say they would be annoyed to lose access
 
-table with filters
+That is when a subscription makes sense.
 
-edit/delete actions
+11. What to watch financially
 
-That alone is enough for beta users.
+Track these numbers from day one:
 
-12. Biggest early mistakes to avoid
+signups
+activated users
+weekly active users
+bets logged per active user
+free to paid conversion
+churn
+average revenue per user
+monthly recurring revenue
+feature usage by plan
 
-Do not:
+The most important early metric is probably:
+how many new users log enough bets to experience value in the first week
 
-build mobile first
+Because if they never get to value, pricing does not matter.
 
-build sportsbook syncing first
+12. App Store path later
 
-build “AI picks” first
+Once the web app is working and people pay, then you can think about iPhone.
 
-build social features first
+If you sell subscriptions inside an iOS app, Apple’s rules matter. Apple says its Small Business Program offers a 15% commission on paid apps and in-app purchases for qualifying developers, and Apple says auto-renewing subscriptions generally pay 70% in year one / 85% after one year, with Small Business Program members receiving 85% from day one for those subscriptions.
 
-overcomplicate auth
+That is why I’d still do:
 
-overcomplicate the schema
+web first
+mobile app second
 
-mix all business logic directly into route files
+You keep more control and can validate the business before taking on app-review overhead.
 
-Also, do not try to build every betting feature at once.
+13. Gambling-adjacent caution
 
-Your first goal is:
-Can a user log in, enter bets, and see useful stats?
+A bankroll tracker is much safer than running a betting platform, but once you add sportsbook ads, affiliate links, direct wagering integrations, or gambling-style promotional flows, review and policy risk goes up. Apple’s App Review Guidelines are the governing standard for App Store approval, and Google Play treats real-money gambling apps and related content as restricted and subject to specific requirements.
 
-If yes, you have a product foundation.
+So the safest path is:
 
-13. What to do this week
+keep Bankroll IQ clearly positioned as an analytics/tracking tool
+avoid acting like a sportsbook
+be careful with gambling promotions
+add responsible-use messaging
+keep your legal pages clean before app-store submission
+14. My exact recommendation for Bankroll IQ
 
-If you want to start today, do this:
+If this were your project, I’d do this:
 
-Day 1
-
-create project
-
-install packages
-
-create folder structure
-
-set up Express + EJS
-
-Day 2
-
-connect MySQL/Postgres
-
-create users and bets tables
-
-Day 3
-
-build register/login/logout
-
-add auth middleware
-
-Day 4
-
-build add bet form + insert into DB
-
-Day 5
-
-build bet history page
-
-Day 6
-
-build dashboard stats
-
-Day 7
-
-clean up styling and bugs
-
-That gets you to a real prototype fast.
-
-14. My recommendation for your exact build
-
-Given how you usually work, I would start with:
-
-Node
-
-Express
-
-MySQL
-
-EJS
-
-Bootstrap or simple CSS
-
-Chart.js
-
-That is the fastest path to a working beta.
-
-After that, if the app gets traction:
-
-convert to API + React frontend
-
+Month 1
+finish MVP
+improve mobile UI
+finalize DB schema
+clean auth and session handling
+set up production environment
+buy domain
+Month 2
+launch public beta
+onboard first users manually
+collect feedback
+improve dashboard and logging speed
+add landing page
+add privacy policy + terms
+Month 3
 add Stripe
+launch Free / Pro Monthly / Pro Annual
+gate advanced analytics
+add export tools
+push users toward first upgrade
+Month 4+
+add CSV import
+add weekly summary emails
+build retention features
+refine onboarding
+test referral ideas
+decide whether PWA or native iOS is worth it
+15. The simplest version of the plan
 
-add CSV imports
+Your profit path is:
 
-then maybe sportsbook integrations
+local app → hosted web app → free users → paid analytics tier → recurring subscription revenue → later mobile app
 
-15. Best first milestone
+That is the cleanest route.
 
-Your first milestone should be:
+For your specific app, I would start with this exact setup:
 
-“A user can create an account, add 20 bets, and see their real profit/loss, ROI, and record by sport.”
-
-That is the right MVP.
-
-If you want, I can give you the exact next step as a full starter boilerplate with:
-
-folder structure
-
-server.js
-
-app.js
-
-MySQL connection
-
-auth routes
-
-bet routes
-
-starter EJS pages
+Free: 75 bets/month + basic dashboard
+Pro Monthly: $9.99
+Pro Annual: $79.99
+Stack: Node/Express + Postgres/MySQL + Stripe + Render/DigitalOcean
+Focus: bankroll analytics, ROI clarity, discipline tools, export/import
+Goal: first 10 paying users before worrying about App Store
