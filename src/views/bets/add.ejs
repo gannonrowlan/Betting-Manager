@@ -1,22 +1,36 @@
 <%- include('../partials/header') %>
-<section class="bet-entry-shell">
-  <section class="bet-entry-layout">
-    <section class="card bet-entry-card">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">New Wager</p>
-          <h2>Enter your bet details</h2>
-          <p class="muted">Everything here feeds your dashboard, history, and stats pages.</p>
-        </div>
-      </div>
+<section class="bet-entry-shell bet-entry-shell-studio">
+  <section class="bet-entry-hero">
+    <div class="bet-entry-hero-heading">
+      <span class="section-label">Entry Flow</span>
+    </div>
+    <article class="bet-entry-hero-stat">
+      <span class="bet-entry-hero-step">1</span>
+      <strong>Use consistent sport, sportsbook, and bet type names so later filtering stays sharp.</strong>
+    </article>
+    <article class="bet-entry-hero-stat">
+      <span class="bet-entry-hero-step">2</span>
+      <strong>For multi-leg tickets, let the leg builder create the summary instead of typing a long market by hand.</strong>
+    </article>
+    <article class="bet-entry-hero-stat">
+      <span class="bet-entry-hero-step">3</span>
+      <strong>Save notes only when they will help you understand why the bet won, lost, or should be avoided again.</strong>
+    </article>
+  </section>
 
-      <form method="POST" action="/bets/new" class="form-grid two-col bet-entry-form" data-bet-form>
-        <section class="bet-entry-group full">
-          <div class="bet-entry-group-header">
-            <span class="section-label">Bet details</span>
-            <strong>What did you bet?</strong>
-          </div>
-          <div class="form-grid two-col">
+  <section class="bet-entry-layout bet-entry-layout-studio">
+    <section class="card bet-entry-card bet-entry-card-studio">
+      <form method="POST" action="/bets/new" class="bet-entry-form bet-entry-form-studio" data-bet-form>
+        <section class="bet-entry-builder-lane">
+          <section class="bet-entry-group bet-entry-group-builder">
+            <div class="bet-entry-group-header bet-entry-group-header-studio">
+              <div>
+                <span class="section-label">Ticket Builder</span>
+                <strong>What did you bet?</strong>
+              </div>
+              <p>Start with the market details.</p>
+            </div>
+            <div class="form-grid two-col">
             <label>
               <span>Sport</span>
               <input
@@ -68,7 +82,7 @@
                 <span>Save this sportsbook to your list for later.</span>
               </div>
             </label>
-            <label>
+            <label class="bet-entry-builder-center-field">
               <span>Bet Type</span>
               <select name="betTypeChoice" required data-bet-type-select>
                 <option value="">Select</option>
@@ -148,15 +162,33 @@
               <strong data-duplicate-title>Similar bet already logged</strong>
               <span data-duplicate-copy>Review your recent bets before saving this one again.</span>
             </section>
-          </div>
+            </div>
+          </section>
+
+          <section class="bet-entry-group bet-entry-group-notes">
+            <div class="bet-entry-group-header bet-entry-group-header-studio">
+              <div>
+                <span class="section-label">Notes</span>
+                <strong>Add context for future review</strong>
+              </div>
+              <p>Use this space for the few details that will actually help when you review the bet later.</p>
+            </div>
+            <label class="full">
+              <textarea name="notes" rows="4" placeholder="Why you liked the bet, injury context, line movement, or anything you want to remember later."><%= formData?.notes || '' %></textarea>
+            </label>
+          </section>
         </section>
 
-        <section class="bet-entry-group full">
-          <div class="bet-entry-group-header">
-            <span class="section-label">Stake and grading</span>
-            <strong>How much did you risk and how did it finish?</strong>
-          </div>
-          <div class="form-grid two-col">
+        <aside class="bet-entry-side-lane">
+          <section class="bet-entry-group bet-entry-group-spotlight">
+            <div class="bet-entry-group-header bet-entry-group-header-studio">
+              <div>
+                <span class="section-label">Settlement</span>
+                <strong>Stake and grading</strong>
+              </div>
+              <p>Enter the risk, mark the result, and use the preview to sanity-check the payout.</p>
+            </div>
+            <div class="form-grid two-col">
             <label>
               <span>Odds</span>
               <input type="number" step="1" name="odds" required placeholder="-110 or +150" value="<%= formData?.odds || '' %>" data-odds-input />
@@ -188,40 +220,31 @@
               <div class="bet-preview-grid">
                 <div>
                   <span>Risk</span>
-                  <strong data-preview-risk>$0.00</strong>
+                  <strong data-preview-risk>- -</strong>
                 </div>
                 <div>
                   <span>To win</span>
-                  <strong data-preview-win>$0.00</strong>
+                  <strong data-preview-win>- -</strong>
                 </div>
                 <div>
-                  <span>Total return</span>
-                  <strong data-preview-return>$0.00</strong>
+                  <span>Return</span>
+                  <strong data-preview-return>- -</strong>
                 </div>
                 <div>
-                  <span>Graded result</span>
-                  <strong data-preview-graded>$0.00</strong>
+                  <span>Result</span>
+                  <strong data-preview-graded>- -</strong>
                 </div>
               </div>
             </section>
-          </div>
-        </section>
+            </div>
+          </section>
 
-        <section class="bet-entry-group full">
-          <div class="bet-entry-group-header">
-            <span class="section-label">Optional notes</span>
-            <strong>Add context for future review</strong>
-          </div>
-          <label class="full">
-            <textarea name="notes" rows="4" placeholder="Why you liked the bet, injury context, line movement, or anything you want to remember later."><%= formData?.notes || '' %></textarea>
-          </label>
-        </section>
-
-        <div class="bet-entry-actions full">
+          <div class="bet-entry-actions bet-entry-actions-studio">
           <button class="btn bet-entry-primary-action" type="submit" name="submitAction" value="save" data-submit-button data-pending-label="Saving bet...">Save Bet</button>
           <button class="btn btn-secondary bet-entry-tertiary-action" type="submit" name="submitAction" value="save-add-another" data-submit-button data-pending-label="Saving and resetting...">Save & Add Another</button>
           <a href="/bets/history" class="btn btn-secondary bet-entry-secondary-action">Back to history</a>
-        </div>
+          </div>
+        </aside>
       </form>
     </section>
   </section>
@@ -319,6 +342,14 @@
     const amount = Number(value || 0);
     const sign = amount < 0 ? '-' : '';
     return `${sign}$${Math.abs(amount).toFixed(2)}`;
+  };
+  const syncPreviewValueSize = (element) => {
+    if (!element) return;
+
+    const textLength = (element.textContent || '').trim().length;
+    element.classList.toggle('is-compact', textLength >= 9);
+    element.classList.toggle('is-tight', textLength >= 11);
+    element.classList.toggle('is-ultra-tight', textLength >= 13);
   };
   const normalizeText = (value) => String(value || '').trim().toLowerCase();
   const buildLegSummaryText = (entries, isMultiSport) => entries
@@ -576,10 +607,11 @@
 
     if (!hasOdds || !hasStake) {
       if (statusEl) statusEl.textContent = 'Waiting for odds and stake';
-      if (riskEl) riskEl.textContent = '$0.00';
-      if (winEl) winEl.textContent = '$0.00';
-      if (returnEl) returnEl.textContent = '$0.00';
-      if (gradedEl) gradedEl.textContent = '$0.00';
+      if (riskEl) riskEl.textContent = '- -';
+      if (winEl) winEl.textContent = '- -';
+      if (returnEl) returnEl.textContent = '- -';
+      if (gradedEl) gradedEl.textContent = '- -';
+      [riskEl, winEl, returnEl, gradedEl].forEach(syncPreviewValueSize);
       payoutPreview.classList.remove('is-win', 'is-loss', 'is-push');
       return;
     }
@@ -605,6 +637,7 @@
     if (winEl) winEl.textContent = formatCurrency(toWin);
     if (returnEl) returnEl.textContent = formatCurrency(totalReturn);
     if (gradedEl) gradedEl.textContent = formatCurrency(gradedValue);
+    [riskEl, winEl, returnEl, gradedEl].forEach(syncPreviewValueSize);
 
     payoutPreview.classList.toggle('is-win', result === 'win');
     payoutPreview.classList.toggle('is-loss', result === 'loss');

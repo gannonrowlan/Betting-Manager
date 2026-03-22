@@ -24,7 +24,7 @@ function renderLanding(req, res) {
 }
 
 function normalizeDashboardFilters(query = {}) {
-  const range = (query.range || '30d').trim();
+  const range = (query.range || 'all').trim();
   const preset = getDateRangePreset(range);
   const rawStartDate = (query.startDate || '').trim();
   const rawEndDate = (query.endDate || '').trim();
