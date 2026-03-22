@@ -1,10 +1,6 @@
 const pool = require('../config/db');
 const {
   calculateProfitLoss,
-  calculateRoi,
-  calculateWinRate,
-  formatDateInput,
-  parseDateInput,
   summarizeBets,
 } = require('../services/statsService');
 const { dismissAddBetTips } = require('../services/profileService');
@@ -72,11 +68,6 @@ const MARKET_VALIDATORS = {
   'Player Prop': /.+\s.+\s(Over|Under)\s\d+(?:\.\d+)?$/i,
   'Team Prop': /.+\s.+\s(Over|Under)\s\d+(?:\.\d+)?$/i,
 };
-
-function toCsvCell(value) {
-  const safeValue = value == null ? '' : String(value);
-  return `"${safeValue.replace(/"/g, '""')}"`;
-}
 
 function formatDateForCsv(rawDate) {
   if (!rawDate) {
@@ -636,6 +627,8 @@ function buildHistoryFilters(query = {}) {
   const result = (query.result || '').trim();
   const startDate = (query.startDate || '').trim();
   const endDate = (query.endDate || '').trim();
+  const sort = (query.sort || 'date_desc').trim();
+  const filtersOpen = query.filtersOpen === '1';
 
   return {
     sport,
@@ -644,7 +637,86 @@ function buildHistoryFilters(query = {}) {
     result,
     startDate,
     endDate,
-    hasActiveFilters: Boolean(sport || sportsbook || betType || result || startDate || endDate),
+    sort,
+    filtersOpen,
+    hasActiveFilters: Boolean(sport || sportsbook || betType || result || startDate || endDate || sort !== 'date_desc'),
+  };
+}
+
+function parsePositiveInteger(value, fallback = 1) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function formatDateOnly(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function getQuickFilterPresets() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const last7 = new Date(today);
+  last7.setDate(last7.getDate() - 6);
+
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  return [
+    { id: 'today', label: 'Today', startDate: formatDateOnly(today), endDate: formatDateOnly(today), result: '' },
+    { id: 'last7', label: 'Last 7 Days', startDate: formatDateOnly(last7), endDate: formatDateOnly(today), result: '' },
+    { id: 'month', label: 'This Month', startDate: formatDateOnly(monthStart), endDate: formatDateOnly(today), result: '' },
+    { id: 'wins', label: 'Wins', startDate: '', endDate: '', result: 'win' },
+    { id: 'losses', label: 'Losses', startDate: '', endDate: '', result: 'loss' },
+  ];
+}
+
+function buildHistorySort(sortKey = 'date_desc') {
+  const SORT_OPTIONS = {
+    date_desc: { label: 'Newest First', clause: 'bet_date DESC, created_at DESC' },
+    date_asc: { label: 'Oldest First', clause: 'bet_date ASC, created_at ASC' },
+    stake_desc: { label: 'Highest Stake', clause: 'stake DESC, bet_date DESC, created_at DESC' },
+    stake_asc: { label: 'Lowest Stake', clause: 'stake ASC, bet_date DESC, created_at DESC' },
+    profit_desc: { label: 'Highest P/L', clause: 'profit_loss DESC, bet_date DESC, created_at DESC' },
+    profit_asc: { label: 'Lowest P/L', clause: 'profit_loss ASC, bet_date DESC, created_at DESC' },
+    odds_desc: { label: 'Highest Odds', clause: 'odds DESC, bet_date DESC, created_at DESC' },
+    odds_asc: { label: 'Lowest Odds', clause: 'odds ASC, bet_date DESC, created_at DESC' },
+  };
+
+  const selected = SORT_OPTIONS[sortKey] || SORT_OPTIONS.date_desc;
+
+  return {
+    selectedKey: SORT_OPTIONS[sortKey] ? sortKey : 'date_desc',
+    selectedLabel: selected.label,
+    clause: selected.clause,
+    options: Object.entries(SORT_OPTIONS).map(([value, option]) => ({
+      value,
+      label: option.label,
+    })),
+  };
+}
+
+function buildHistoryPagination(totalItems, currentPage, perPage) {
+  const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+  const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
+  const startPage = Math.max(1, safeCurrentPage - 2);
+  const endPage = Math.min(totalPages, startPage + 4);
+  const adjustedStartPage = Math.max(1, endPage - 4);
+
+  return {
+    currentPage: safeCurrentPage,
+    perPage,
+    totalItems,
+    totalPages,
+    pageNumbers: Array.from(
+      { length: endPage - adjustedStartPage + 1 },
+      (_, index) => adjustedStartPage + index
+    ),
+    startItem: totalItems ? ((safeCurrentPage - 1) * perPage) + 1 : 0,
+    endItem: Math.min(safeCurrentPage * perPage, totalItems),
+    hasPreviousPage: safeCurrentPage > 1,
+    hasNextPage: safeCurrentPage < totalPages,
+    previousPage: Math.max(1, safeCurrentPage - 1),
+    nextPage: Math.min(totalPages, safeCurrentPage + 1),
   };
 }
 
@@ -652,43 +724,63 @@ async function renderHistory(req, res) {
   const userId = req.session.user.id;
   await ensureBetTableColumns();
   const filters = buildHistoryFilters(req.query);
+  const requestedPage = parsePositiveInteger(req.query.page, 1);
+  const perPage = 25;
+  const sort = buildHistorySort(filters.sort);
+  const quickFilters = getQuickFilterPresets().map((preset) => ({
+    ...preset,
+    isActive:
+      filters.startDate === preset.startDate &&
+      filters.endDate === preset.endDate &&
+      filters.result === preset.result,
+  }));
 
-  let historyQuery = 'SELECT * FROM bets WHERE user_id = ?';
+  let whereClause = 'FROM bets WHERE user_id = ?';
   const queryParams = [userId];
 
   if (filters.sport) {
-    historyQuery += ' AND sport = ?';
+    whereClause += ' AND sport = ?';
     queryParams.push(filters.sport);
   }
 
   if (filters.sportsbook) {
-    historyQuery += ' AND sportsbook = ?';
+    whereClause += ' AND sportsbook = ?';
     queryParams.push(filters.sportsbook);
   }
 
   if (filters.betType) {
-    historyQuery += ' AND bet_type = ?';
+    whereClause += ' AND bet_type = ?';
     queryParams.push(filters.betType);
   }
 
   if (filters.result) {
-    historyQuery += ' AND result = ?';
+    whereClause += ' AND result = ?';
     queryParams.push(filters.result);
   }
 
   if (filters.startDate) {
-    historyQuery += ' AND bet_date >= ?';
+    whereClause += ' AND bet_date >= ?';
     queryParams.push(filters.startDate);
   }
 
   if (filters.endDate) {
-    historyQuery += ' AND bet_date <= ?';
+    whereClause += ' AND bet_date <= ?';
     queryParams.push(filters.endDate);
   }
 
-  historyQuery += ' ORDER BY bet_date DESC, created_at DESC';
+  const [countRows] = await pool.query(
+    `SELECT COUNT(*) AS total ${whereClause}`,
+    queryParams
+  );
+  const totalBets = Number(countRows[0]?.total || 0);
+  const pagination = buildHistoryPagination(totalBets, requestedPage, perPage);
 
-  const [bets] = await pool.query(historyQuery, queryParams);
+  const [bets] = await pool.query(
+    `SELECT * ${whereClause}
+      ORDER BY ${sort.clause}
+      LIMIT ? OFFSET ?`,
+    [...queryParams, pagination.perPage, (pagination.currentPage - 1) * pagination.perPage]
+  );
   const legsByBetId = await getBetLegsByBetIds(userId, bets.map((bet) => bet.id));
   const betsWithLegs = attachLegsToBets(bets, legsByBetId);
   const [sports] = await pool.query(
@@ -704,27 +796,23 @@ async function renderHistory(req, res) {
     [userId]
   );
 
-  const summary = summarizeBets(bets);
-
-  return res.render('bets/history', {
+  const viewModel = {
     title: 'Bet History',
     bets: betsWithLegs,
     sports: sports.map((row) => row.sport),
     sportsbooks: sportsbooks.map((row) => row.sportsbook),
     betTypes: betTypes.map((row) => row.bet_type),
     filters,
-    summary: {
-      totalBets: summary.totalBets,
-      totalStake: summary.totalStake.toFixed(2),
-      netProfit: summary.netProfit.toFixed(2),
-      winRate: calculateWinRate({ wins: summary.wins, losses: summary.losses }),
-      roi: calculateRoi({ netProfit: summary.netProfit, totalStake: summary.totalStake }),
-      wins: summary.wins,
-      losses: summary.losses,
-      pushes: summary.pushes,
-      averageStake: summary.averageStake.toFixed(2),
-    },
-  });
+    sort,
+    quickFilters,
+    pagination,
+  };
+
+  if (req.query.partial === '1') {
+    return res.render('bets/partials/historyContent', viewModel);
+  }
+
+  return res.render('bets/history', viewModel);
 }
 
 async function renderEditBet(req, res) {
@@ -870,71 +958,32 @@ async function deleteBet(req, res) {
   return res.redirect('/bets/history');
 }
 
-async function exportHistoryCsv(req, res) {
+async function deleteSelectedBets(req, res) {
   const userId = req.session.user.id;
-  await ensureBetTableColumns();
-  const filters = buildHistoryFilters(req.query);
-  let exportQuery = `SELECT id, bet_date, sport, sportsbook, bet_type, leg_count, market, odds, stake, result, profit_loss, notes
-      FROM bets
-      WHERE user_id = ?`;
-  const queryParams = [userId];
+  const betIds = toArray(req.body.betIds)
+    .map((value) => Number.parseInt(value, 10))
+    .filter((value) => Number.isInteger(value) && value > 0);
 
-  if (filters.sport) {
-    exportQuery += ' AND sport = ?';
-    queryParams.push(filters.sport);
+  if (!betIds.length) {
+    req.session.messages = [{ type: 'error', text: 'Select at least one bet to delete.' }];
+    return res.redirect('/bets/history');
   }
 
-  if (filters.sportsbook) {
-    exportQuery += ' AND sportsbook = ?';
-    queryParams.push(filters.sportsbook);
-  }
+  const placeholders = betIds.map(() => '?').join(', ');
+  const [result] = await pool.query(
+    `DELETE FROM bets
+      WHERE user_id = ?
+        AND id IN (${placeholders})`,
+    [userId, ...betIds]
+  );
 
-  if (filters.betType) {
-    exportQuery += ' AND bet_type = ?';
-    queryParams.push(filters.betType);
-  }
-
-  if (filters.result) {
-    exportQuery += ' AND result = ?';
-    queryParams.push(filters.result);
-  }
-
-  if (filters.startDate && parseDateInput(filters.startDate)) {
-    exportQuery += ' AND bet_date >= ?';
-    queryParams.push(formatDateInput(parseDateInput(filters.startDate)));
-  }
-
-  if (filters.endDate && parseDateInput(filters.endDate)) {
-    exportQuery += ' AND bet_date <= ?';
-    queryParams.push(formatDateInput(parseDateInput(filters.endDate)));
-  }
-
-  exportQuery += ' ORDER BY bet_date DESC, created_at DESC';
-
-  const [bets] = await pool.query(exportQuery, queryParams);
-  const legsByBetId = await getBetLegsByBetIds(userId, bets.map((bet) => bet.id));
-  const betsWithLegs = attachLegsToBets(bets, legsByBetId);
-
-  const headers = ['Bet Date', 'Sport', 'Sportsbook', 'Bet Type', 'Market', 'Odds', 'Stake', 'Result', 'Profit/Loss', 'Notes'];
-  const rows = betsWithLegs.map((bet) => [
-    formatDateForCsv(bet.bet_date),
-    bet.sport,
-    bet.sportsbook || '',
-    bet.leg_count ? `${bet.bet_type} (${bet.leg_count} legs)` : bet.bet_type,
-    bet.displayMarket,
-    bet.odds,
-    Number(bet.stake || 0).toFixed(2),
-    bet.result,
-    Number(bet.profit_loss || 0).toFixed(2),
-    bet.notes || '',
-  ]);
-
-  const csvLines = [headers, ...rows].map((row) => row.map(toCsvCell).join(','));
-  const csvContent = csvLines.join('\n');
-
-  res.setHeader('Content-Type', 'text/csv');
-  res.setHeader('Content-Disposition', 'attachment; filename="bet-history.csv"');
-  return res.status(200).send(csvContent);
+  req.session.messages = [{
+    type: result.affectedRows ? 'success' : 'error',
+    text: result.affectedRows
+      ? `${result.affectedRows} bet${result.affectedRows === 1 ? '' : 's'} deleted.`
+      : 'No matching bets were deleted.',
+  }];
+  return res.redirect('/bets/history');
 }
 
 async function dismissAddBetTipsPrompt(req, res) {
@@ -947,8 +996,8 @@ module.exports = {
   createBet,
   renderHistory,
   renderEditBet,
-  exportHistoryCsv,
   updateBet,
   deleteBet,
+  deleteSelectedBets,
   dismissAddBetTipsPrompt,
 };

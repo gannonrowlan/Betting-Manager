@@ -1,0 +1,209 @@
+<section class="card history-filter-card">
+  <details class="history-filter-details" <%= filters.filtersOpen ? 'open' : '' %>>
+    <summary class="history-filter-summary">
+      <span>
+        <strong>Filter history</strong>
+        <small><%= filters.hasActiveFilters ? 'Filtered view active' : 'Open to narrow down your bet list' %></small>
+      </span>
+      <span class="history-filter-summary-label" data-filter-toggle-label>Show Filters</span>
+    </summary>
+    <form method="GET" action="/bets/history" class="form-grid history-filter-grid" data-history-async-form>
+      <input type="hidden" name="filtersOpen" value="1" data-filters-open-input>
+      <label>
+        Sport
+        <select name="sport">
+          <option value="">All Sports</option>
+          <% sports.forEach((sportOption) => { %>
+            <option value="<%= sportOption %>" <%= filters.sport === sportOption ? 'selected' : '' %>><%= sportOption %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>
+        Sportsbook
+        <select name="sportsbook">
+          <option value="">All Books</option>
+          <% sportsbooks.forEach((sportsbookOption) => { %>
+            <option value="<%= sportsbookOption %>" <%= filters.sportsbook === sportsbookOption ? 'selected' : '' %>><%= sportsbookOption %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>
+        Bet Type
+        <select name="betType">
+          <option value="">All Types</option>
+          <% betTypes.forEach((betTypeOption) => { %>
+            <option value="<%= betTypeOption %>" <%= filters.betType === betTypeOption ? 'selected' : '' %>><%= betTypeOption %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>
+        Result
+        <select name="result">
+          <option value="">All Results</option>
+          <option value="win" <%= filters.result === 'win' ? 'selected' : '' %>>Win</option>
+          <option value="loss" <%= filters.result === 'loss' ? 'selected' : '' %>>Loss</option>
+          <option value="push" <%= filters.result === 'push' ? 'selected' : '' %>>Push</option>
+        </select>
+      </label>
+      <label>
+        Start Date
+        <input type="date" name="startDate" value="<%= filters.startDate %>">
+      </label>
+      <label>
+        End Date
+        <input type="date" name="endDate" value="<%= filters.endDate %>">
+      </label>
+      <div class="full filter-actions">
+        <button type="submit" class="btn btn-small">Apply Filters</button>
+        <a href="/bets/history?filtersOpen=1" class="btn btn-secondary btn-small" data-history-async-link>Reset</a>
+      </div>
+    </form>
+  </details>
+</section>
+
+<section class="card history-table-card">
+  <div class="preview-subheader">
+    <div>
+      <strong>Saved bets</strong>
+      <span>
+        <%= pagination.totalItems ? `Showing ${pagination.startItem}-${pagination.endItem} of ${pagination.totalItems}` : '0 rows in this view' %>
+      </span>
+    </div>
+    <form method="GET" action="/bets/history" class="history-sort-form" data-history-async-form>
+      <input type="hidden" name="filtersOpen" value="<%= filters.filtersOpen ? '1' : '0' %>" data-filters-open-input>
+      <input type="hidden" name="sport" value="<%= filters.sport %>">
+      <input type="hidden" name="sportsbook" value="<%= filters.sportsbook %>">
+      <input type="hidden" name="betType" value="<%= filters.betType %>">
+      <input type="hidden" name="result" value="<%= filters.result %>">
+      <input type="hidden" name="startDate" value="<%= filters.startDate %>">
+      <input type="hidden" name="endDate" value="<%= filters.endDate %>">
+      <label class="history-sort-label">
+        <span class="history-sort-kicker">Sort</span>
+        <span class="history-sort-select-wrap">
+          <select name="sort" onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
+            <% sort.options.forEach((option) => { %>
+              <option value="<%= option.value %>" <%= sort.selectedKey === option.value ? 'selected' : '' %>><%= option.label %></option>
+            <% }) %>
+          </select>
+        </span>
+      </label>
+    </form>
+  </div>
+
+  <div class="history-quick-filters">
+    <% quickFilters.forEach((quickFilter) => { %>
+      <% const quickParams = new URLSearchParams({ sport: filters.sport, sportsbook: filters.sportsbook, betType: filters.betType, result: quickFilter.isActive ? '' : quickFilter.result, startDate: quickFilter.isActive ? '' : quickFilter.startDate, endDate: quickFilter.isActive ? '' : quickFilter.endDate, sort: sort.selectedKey, filtersOpen: filters.filtersOpen ? '1' : '0' }); %>
+      <a href="/bets/history?<%= quickParams.toString() %>" class="history-quick-filter <%= quickFilter.isActive ? 'is-active' : '' %>" data-history-async-link>
+        <%= quickFilter.label %>
+      </a>
+    <% }) %>
+  </div>
+
+  <% if (!bets.length) { %>
+    <div class="dashboard-empty-state history-empty-state">
+      <p class="muted">No bets match this filter set yet. Reset the filters or log a new wager.</p>
+      <a href="/bets/new" class="btn btn-small">Add Bet</a>
+    </div>
+  <% } else { %>
+    <form method="POST" action="/bets/history/delete" data-history-selection-form>
+      <input type="hidden" name="mode" value="delete">
+      <div class="table-wrap">
+        <table class="history-table" data-history-table>
+        <thead>
+          <tr>
+            <th class="history-select-column" data-history-select-column hidden>
+              <label class="history-select-toggle">
+                <input type="checkbox" data-history-select-all>
+                <span aria-hidden="true"></span>
+                <span class="sr-only">Select all bets on this page</span>
+              </label>
+            </th>
+            <th>Date</th>
+            <th>Sport</th>
+            <th>Book</th>
+            <th>Type</th>
+            <th>Market</th>
+            <th>Odds</th>
+            <th>Stake</th>
+            <th>Result</th>
+            <th>P/L</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% bets.forEach((bet) => { %>
+            <tr data-history-row data-edit-url="/bets/<%= bet.id %>/edit">
+              <td class="history-select-cell" data-history-select-cell hidden>
+                <label class="history-select-toggle">
+                  <input type="checkbox" name="betIds" value="<%= bet.id %>" data-history-checkbox>
+                  <span aria-hidden="true"></span>
+                  <span class="sr-only">Select bet from <%= new Date(bet.bet_date).toISOString().slice(0,10) %> for <%= bet.displayMarket %></span>
+                </label>
+              </td>
+              <td><%= new Date(bet.bet_date).toISOString().slice(0,10) %></td>
+              <td><%= bet.sport %></td>
+              <td><%= bet.sportsbook || '-' %></td>
+              <td>
+                <div class="history-bet-type-cell">
+                  <span><%= bet.bet_type %></span>
+                  <% if (bet.leg_count) { %>
+                    <small><%= bet.leg_count %> legs</small>
+                  <% } %>
+                </div>
+              </td>
+              <td class="history-market-cell">
+                <% if (bet.legs?.length) { %>
+                  <div class="history-leg-list">
+                    <% bet.legs.forEach((leg, index) => { %>
+                      <span><strong>Leg <%= index + 1 %>:</strong> <%= bet.isMultiSport && leg.sport ? `${leg.sport} - ` : '' %><%= leg.market %></span>
+                    <% }) %>
+                  </div>
+                <% } else { %>
+                  <div><%= bet.displayMarket %></div>
+                <% } %>
+              </td>
+              <td><%= bet.odds > 0 ? `+${bet.odds}` : bet.odds %></td>
+              <td>$<%= Number(bet.stake).toFixed(2) %></td>
+              <td>
+                <span class="dashboard-result-pill dashboard-result-<%= bet.result %>"><%= bet.result %></span>
+              </td>
+              <td class="<%= bet.profit_loss >= 0 ? 'positive' : 'negative' %>"><%= Number(bet.profit_loss) >= 0 ? '+' : '-' %>$<%= Math.abs(Number(bet.profit_loss)).toFixed(2) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      </div>
+      <% if (pagination.totalPages > 1) { %>
+        <nav class="history-pagination" aria-label="History pages">
+          <% const previousParams = new URLSearchParams({ sport: filters.sport, sportsbook: filters.sportsbook, betType: filters.betType, result: filters.result, startDate: filters.startDate, endDate: filters.endDate, sort: sort.selectedKey, filtersOpen: filters.filtersOpen ? '1' : '0', page: pagination.previousPage }); %>
+          <a href="/bets/history?<%= previousParams.toString() %>" class="history-page-link <%= pagination.hasPreviousPage ? '' : 'is-disabled' %>" <%= pagination.hasPreviousPage ? '' : 'aria-disabled="true" tabindex="-1"' %> data-history-async-link>
+            Previous
+          </a>
+
+          <% pagination.pageNumbers.forEach((pageNumber) => { %>
+            <% const pageParams = new URLSearchParams({ sport: filters.sport, sportsbook: filters.sportsbook, betType: filters.betType, result: filters.result, startDate: filters.startDate, endDate: filters.endDate, sort: sort.selectedKey, filtersOpen: filters.filtersOpen ? '1' : '0', page: pageNumber }); %>
+            <a href="/bets/history?<%= pageParams.toString() %>" class="history-page-link <%= pageNumber === pagination.currentPage ? 'is-active' : '' %>" data-history-async-link>
+              <%= pageNumber %>
+            </a>
+          <% }) %>
+
+          <% const nextParams = new URLSearchParams({ sport: filters.sport, sportsbook: filters.sportsbook, betType: filters.betType, result: filters.result, startDate: filters.startDate, endDate: filters.endDate, sort: sort.selectedKey, filtersOpen: filters.filtersOpen ? '1' : '0', page: pagination.nextPage }); %>
+          <a href="/bets/history?<%= nextParams.toString() %>" class="history-page-link <%= pagination.hasNextPage ? '' : 'is-disabled' %>" <%= pagination.hasNextPage ? '' : 'aria-disabled="true" tabindex="-1"' %> data-history-async-link>
+            Next
+          </a>
+        </nav>
+      <% } %>
+      <div class="history-selection-footer" data-history-selection-footer>
+        <div>
+          <strong>Manage bets</strong>
+          <p class="muted" data-history-toolbar-message>Click any bet row to edit it, or use delete mode to remove one or more bets.</p>
+        </div>
+        <div class="history-selection-actions">
+          <p class="muted" data-history-selection-count hidden>0 selected</p>
+          <button type="button" class="history-toolbar-btn history-toolbar-btn-danger" data-history-mode-trigger="delete">Delete Bets</button>
+          <button type="button" class="history-toolbar-btn history-toolbar-btn-secondary" data-history-cancel hidden>Cancel</button>
+          <button type="button" class="btn btn-small" data-history-confirm hidden>Delete Selected</button>
+        </div>
+      </div>
+    </form>
+  <% } %>
+</section>

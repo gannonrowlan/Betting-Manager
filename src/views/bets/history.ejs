@@ -5,157 +5,301 @@
       <div>
         <p class="eyebrow">Bet History</p>
         <h1>Your betting ledger, cleaned up.</h1>
-        <p class="muted">Review every wager, isolate patterns, and export the exact slice you need.</p>
+        <p class="muted">Review every wager, isolate patterns, and find the exact slice you need.</p>
       </div>
-      <a href="/bets/history/export?<%= new URLSearchParams({ sport: filters.sport, sportsbook: filters.sportsbook, betType: filters.betType, result: filters.result, startDate: filters.startDate, endDate: filters.endDate }).toString() %>" class="btn btn-small">Export CSV</a>
-    </div>
-
-    <div class="stats-grid history-summary-grid">
-      <article class="card stat-card">
-        <h3>Total Bets</h3>
-        <p><%= summary.totalBets %></p>
-        <small>Tracked in this view</small>
-      </article>
-      <article class="card stat-card">
-        <h3>Record</h3>
-        <p><%= summary.wins %>-<%= summary.losses %>-<%= summary.pushes %></p>
-        <small><%= summary.winRate %>% win rate</small>
-      </article>
-      <article class="card stat-card">
-        <h3>Net Profit</h3>
-        <p class="<%= Number(summary.netProfit) >= 0 ? 'positive' : 'negative' %>">$<%= summary.netProfit %></p>
-        <small><%= summary.roi %>% ROI</small>
-      </article>
-      <article class="card stat-card">
-        <h3>Total Stake</h3>
-        <p>$<%= summary.totalStake %></p>
-        <small>$<%= summary.averageStake %> average stake</small>
-      </article>
     </div>
   </section>
 
-  <section class="card history-filter-card">
-    <div class="preview-subheader">
-      <strong>Filter history</strong>
-      <span><%= filters.hasActiveFilters ? 'Filtered view active' : 'Showing all saved bets' %></span>
-    </div>
-    <form method="GET" action="/bets/history" class="form-grid history-filter-grid">
-      <label>
-        Sport
-        <select name="sport">
-          <option value="">All Sports</option>
-          <% sports.forEach((sportOption) => { %>
-            <option value="<%= sportOption %>" <%= filters.sport === sportOption ? 'selected' : '' %>><%= sportOption %></option>
-          <% }) %>
-        </select>
-      </label>
-      <label>
-        Sportsbook
-        <select name="sportsbook">
-          <option value="">All Books</option>
-          <% sportsbooks.forEach((sportsbookOption) => { %>
-            <option value="<%= sportsbookOption %>" <%= filters.sportsbook === sportsbookOption ? 'selected' : '' %>><%= sportsbookOption %></option>
-          <% }) %>
-        </select>
-      </label>
-      <label>
-        Bet Type
-        <select name="betType">
-          <option value="">All Types</option>
-          <% betTypes.forEach((betTypeOption) => { %>
-            <option value="<%= betTypeOption %>" <%= filters.betType === betTypeOption ? 'selected' : '' %>><%= betTypeOption %></option>
-          <% }) %>
-        </select>
-      </label>
-      <label>
-        Result
-        <select name="result">
-          <option value="">All Results</option>
-          <option value="win" <%= filters.result === 'win' ? 'selected' : '' %>>Win</option>
-          <option value="loss" <%= filters.result === 'loss' ? 'selected' : '' %>>Loss</option>
-          <option value="push" <%= filters.result === 'push' ? 'selected' : '' %>>Push</option>
-        </select>
-      </label>
-      <label>
-        Start Date
-        <input type="date" name="startDate" value="<%= filters.startDate %>">
-      </label>
-      <label>
-        End Date
-        <input type="date" name="endDate" value="<%= filters.endDate %>">
-      </label>
-      <div class="full filter-actions">
-        <button type="submit" class="btn btn-small">Apply Filters</button>
-        <a href="/bets/history" class="btn btn-secondary btn-small">Reset</a>
-      </div>
-    </form>
-  </section>
-
-  <section class="card history-table-card">
-    <div class="preview-subheader">
-      <strong>Saved bets</strong>
-      <span><%= bets.length %> rows in this view</span>
-    </div>
-
-    <% if (!bets.length) { %>
-      <div class="dashboard-empty-state history-empty-state">
-        <p class="muted">No bets match this filter set yet. Reset the filters or log a new wager.</p>
-        <a href="/bets/new" class="btn btn-small">Add Bet</a>
-      </div>
-    <% } else { %>
-      <div class="table-wrap">
-        <table class="history-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Sport</th>
-              <th>Book</th>
-              <th>Type</th>
-              <th>Market</th>
-              <th>Odds</th>
-              <th>Stake</th>
-              <th>Result</th>
-              <th>P/L</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% bets.forEach((bet) => { %>
-              <tr>
-                <td><%= new Date(bet.bet_date).toISOString().slice(0,10) %></td>
-                <td><%= bet.sport %></td>
-                <td><%= bet.sportsbook || '-' %></td>
-                <td><%= bet.leg_count ? `${bet.bet_type} (${bet.leg_count} legs)` : bet.bet_type %></td>
-                <td class="history-market-cell">
-                  <div><%= bet.displayMarket %></div>
-                  <% if (bet.legs?.length) { %>
-                    <div class="history-leg-list">
-                      <% bet.legs.forEach((leg, index) => { %>
-                        <span><strong>Leg <%= index + 1 %>:</strong> <%= bet.isMultiSport && leg.sport ? `${leg.sport} - ` : '' %><%= leg.market %></span>
-                      <% }) %>
-                    </div>
-                  <% } %>
-                </td>
-                <td><%= bet.odds > 0 ? `+${bet.odds}` : bet.odds %></td>
-                <td>$<%= Number(bet.stake).toFixed(2) %></td>
-                <td>
-                  <span class="dashboard-result-pill dashboard-result-<%= bet.result %>"><%= bet.result %></span>
-                </td>
-                <td class="<%= bet.profit_loss >= 0 ? 'positive' : 'negative' %>">$<%= Number(bet.profit_loss).toFixed(2) %></td>
-                <td>
-                  <div class="history-actions">
-                    <a href="/bets/<%= bet.id %>/edit">Edit</a>
-                    <form method="POST" action="/bets/<%= bet.id %>/delete" class="inline-form" onsubmit="return confirm('Delete this bet?');">
-                      <button type="submit" class="link-btn danger">Delete</button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-    <% } %>
-  </section>
+  <div data-history-content>
+    <%- include('partials/historyContent') %>
+  </div>
 </section>
+
+<script>
+  (() => {
+    const historyRoot = document.querySelector('[data-history-content]');
+
+    if (!historyRoot) {
+      return;
+    }
+
+    let activeRequestId = 0;
+
+    const buildPartialUrl = (inputUrl) => {
+      const url = new URL(inputUrl, window.location.origin);
+      url.searchParams.set('partial', '1');
+      return url;
+    };
+
+    const syncBrowserUrl = (inputUrl, replaceState = false) => {
+      const url = new URL(inputUrl, window.location.origin);
+      url.searchParams.delete('partial');
+      const method = replaceState ? 'replaceState' : 'pushState';
+      window.history[method]({}, '', `${url.pathname}${url.search}${url.hash}`);
+    };
+
+    const hydrateHistoryContent = () => {
+      const table = historyRoot.querySelector('[data-history-table]');
+      const form = historyRoot.querySelector('[data-history-selection-form]');
+      const filterDetails = historyRoot.querySelector('.history-filter-details');
+      const filterToggleLabel = historyRoot.querySelector('[data-filter-toggle-label]');
+      const filterOpenInputs = Array.from(historyRoot.querySelectorAll('[data-filters-open-input]'));
+
+      if (filterDetails && filterToggleLabel) {
+        const syncFilterLabel = () => {
+          filterToggleLabel.textContent = filterDetails.open ? 'Hide Filters' : 'Show Filters';
+          filterOpenInputs.forEach((input) => {
+            input.value = filterDetails.open ? '1' : '0';
+          });
+        };
+
+        filterDetails.addEventListener('toggle', syncFilterLabel);
+        syncFilterLabel();
+      }
+
+      historyRoot.querySelectorAll('[data-history-async-form]').forEach((asyncForm) => {
+        asyncForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const action = asyncForm.getAttribute('action') || window.location.pathname;
+          const formUrl = new URL(action, window.location.origin);
+          const formData = new FormData(asyncForm);
+          const params = new URLSearchParams();
+
+          for (const [key, value] of formData.entries()) {
+            if (value !== '') {
+              params.set(key, value);
+            }
+          }
+
+          formUrl.search = params.toString();
+          loadHistoryContent(formUrl.toString());
+        });
+      });
+
+      historyRoot.querySelectorAll('[data-history-async-link]').forEach((link) => {
+        link.addEventListener('click', (event) => {
+          const href = link.getAttribute('href');
+          const isModifiedClick = event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
+
+          if (!href || isModifiedClick || link.getAttribute('aria-disabled') === 'true') {
+            return;
+          }
+
+          event.preventDefault();
+          loadHistoryContent(href);
+        });
+      });
+
+      if (!table || !form) {
+        return;
+      }
+
+      const deleteTrigger = historyRoot.querySelector('[data-history-mode-trigger="delete"]');
+      const cancelTrigger = historyRoot.querySelector('[data-history-cancel]');
+      const message = historyRoot.querySelector('[data-history-toolbar-message]');
+      const selectColumn = table.querySelector('[data-history-select-column]');
+      const selectAll = table.querySelector('[data-history-select-all]');
+      const selectCells = Array.from(table.querySelectorAll('[data-history-select-cell]'));
+      const checkboxes = Array.from(table.querySelectorAll('[data-history-checkbox]'));
+      const rows = Array.from(table.querySelectorAll('[data-history-row]'));
+      const countLabel = historyRoot.querySelector('[data-history-selection-count]');
+      const confirmButton = historyRoot.querySelector('[data-history-confirm]');
+
+      let mode = null;
+
+      const getChecked = () => checkboxes.filter((checkbox) => checkbox.checked);
+
+      const resetSelection = () => {
+        checkboxes.forEach((checkbox) => {
+          checkbox.checked = false;
+        });
+        rows.forEach((row) => row.classList.remove('is-selected'));
+      };
+
+      const updateSummary = () => {
+        const selected = getChecked();
+        const selectedCount = selected.length;
+
+        rows.forEach((row) => {
+          const checkbox = row.querySelector('[data-history-checkbox]');
+          row.classList.toggle('is-selected', Boolean(checkbox?.checked));
+        });
+
+        if (selectAll) {
+          selectAll.checked = checkboxes.length > 0 && selectedCount === checkboxes.length;
+          selectAll.indeterminate = selectedCount > 0 && selectedCount < checkboxes.length;
+        }
+
+        if (!mode) {
+          if (message) {
+            message.textContent = 'Click any bet row to edit it, or use delete mode to remove one or more bets.';
+          }
+          if (countLabel) {
+            countLabel.hidden = true;
+          }
+          if (confirmButton) {
+            confirmButton.hidden = true;
+          }
+          return;
+        }
+
+        if (message) {
+          message.textContent = selectedCount
+            ? `${selectedCount} bet${selectedCount === 1 ? '' : 's'} ready to delete.`
+            : 'Select one or more bets to delete.';
+        }
+        if (countLabel) {
+          countLabel.textContent = selectedCount === 1 ? '1 bet selected' : `${selectedCount} bets selected`;
+          countLabel.hidden = selectedCount < 1;
+        }
+        if (confirmButton) {
+          confirmButton.hidden = selectedCount < 1;
+        }
+      };
+
+      const setMode = (nextMode) => {
+        mode = nextMode;
+        const selecting = Boolean(mode);
+
+        if (selectColumn) {
+          selectColumn.hidden = !selecting;
+        }
+
+        selectCells.forEach((cell) => {
+          cell.hidden = !selecting;
+        });
+
+        if (cancelTrigger) {
+          cancelTrigger.hidden = !selecting;
+        }
+        if (deleteTrigger) {
+          deleteTrigger.hidden = selecting;
+        }
+        resetSelection();
+        updateSummary();
+      };
+
+      const exitMode = () => {
+        mode = null;
+        if (deleteTrigger) {
+          deleteTrigger.hidden = false;
+        }
+        if (cancelTrigger) {
+          cancelTrigger.hidden = true;
+        }
+        if (selectColumn) {
+          selectColumn.hidden = true;
+        }
+        if (selectAll) {
+          selectAll.checked = false;
+          selectAll.indeterminate = false;
+        }
+        selectCells.forEach((cell) => {
+          cell.hidden = true;
+        });
+        resetSelection();
+        updateSummary();
+      };
+
+      if (deleteTrigger) {
+        deleteTrigger.addEventListener('click', () => setMode('delete'));
+      }
+      if (cancelTrigger) {
+        cancelTrigger.addEventListener('click', exitMode);
+      }
+
+      checkboxes.forEach((checkbox) => {
+        checkbox.addEventListener('change', () => {
+          updateSummary();
+        });
+      });
+
+      if (selectAll) {
+        selectAll.addEventListener('change', () => {
+          checkboxes.forEach((checkbox) => {
+            checkbox.checked = selectAll.checked;
+          });
+          updateSummary();
+        });
+      }
+
+      rows.forEach((row) => {
+        row.addEventListener('click', (event) => {
+          if (mode === 'delete') {
+            return;
+          }
+
+          const interactiveTarget = event.target.closest('a, button, input, label, select, textarea');
+          if (interactiveTarget) {
+            return;
+          }
+
+          const editUrl = row.dataset.editUrl;
+          if (editUrl) {
+            window.location.assign(editUrl);
+          }
+        });
+      });
+
+      if (confirmButton) {
+        confirmButton.addEventListener('click', () => {
+          const selected = getChecked();
+
+          if (!selected.length) {
+            window.alert('Select at least one bet to delete.');
+            return;
+          }
+
+          if (!window.confirm(`Delete ${selected.length} selected bet${selected.length === 1 ? '' : 's'}?`)) {
+            return;
+          }
+
+          form.submit();
+        });
+      }
+
+      updateSummary();
+    };
+
+    const loadHistoryContent = async (inputUrl, options = {}) => {
+      const { replaceState = false } = options;
+      const requestId = ++activeRequestId;
+      const partialUrl = buildPartialUrl(inputUrl);
+
+      historyRoot.classList.add('history-loading');
+
+      try {
+        const response = await fetch(partialUrl.toString(), {
+          headers: {
+            'X-Requested-With': 'fetch',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('History request failed');
+        }
+
+        const html = await response.text();
+
+        if (requestId !== activeRequestId) {
+          return;
+        }
+
+        historyRoot.innerHTML = html;
+        hydrateHistoryContent();
+        syncBrowserUrl(inputUrl, replaceState);
+      } catch (error) {
+        window.location.assign(inputUrl);
+      } finally {
+        historyRoot.classList.remove('history-loading');
+      }
+    };
+
+    window.addEventListener('popstate', () => {
+      loadHistoryContent(window.location.href, { replaceState: true });
+    });
+
+    hydrateHistoryContent();
+  })();
+</script>
 <%- include('../partials/footer') %>
