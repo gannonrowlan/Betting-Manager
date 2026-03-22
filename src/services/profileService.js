@@ -35,6 +35,20 @@ async function ensureProfileTable() {
   }
 
   profileTableEnsured = true;
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS bankroll_transactions (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      transaction_type ENUM('deposit', 'withdrawal') NOT NULL,
+      amount DECIMAL(10, 2) NOT NULL,
+      transaction_date DATE NOT NULL,
+      notes VARCHAR(255) NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      CONSTRAINT fk_bankroll_transactions_users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
 }
 
 async function getOrCreateProfile(userId) {
@@ -100,8 +114,57 @@ async function dismissAddBetTips(userId) {
   );
 }
 
+async function getBankrollTransactions(userId) {
+  await ensureProfileTable();
+
+  const [rows] = await pool.query(
+    `SELECT
+      id,
+      transaction_type AS transactionType,
+      amount,
+      transaction_date AS transactionDate,
+      notes,
+      created_at AS createdAt
+    FROM bankroll_transactions
+    WHERE user_id = ?
+    ORDER BY transaction_date DESC, created_at DESC`,
+    [userId]
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    transactionType: row.transactionType,
+    amount: Number(row.amount),
+    transactionDate: row.transactionDate,
+    notes: row.notes || '',
+    createdAt: row.createdAt,
+  }));
+}
+
+async function createBankrollTransaction(userId, { transactionType, amount, transactionDate, notes }) {
+  await ensureProfileTable();
+
+  await pool.query(
+    `INSERT INTO bankroll_transactions (user_id, transaction_type, amount, transaction_date, notes)
+      VALUES (?, ?, ?, ?, ?)`,
+    [userId, transactionType, amount, transactionDate, notes || null]
+  );
+}
+
+async function deleteBankrollTransaction(userId, transactionId) {
+  await ensureProfileTable();
+
+  await pool.query(
+    'DELETE FROM bankroll_transactions WHERE id = ? AND user_id = ?',
+    [transactionId, userId]
+  );
+}
+
 module.exports = {
+  createBankrollTransaction,
+  deleteBankrollTransaction,
   dismissAddBetTips,
+  getBankrollTransactions,
   getOrCreateProfile,
   updateProfile,
 };

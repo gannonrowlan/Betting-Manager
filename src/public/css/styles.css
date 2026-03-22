@@ -1170,6 +1170,31 @@ td {
   gap: 1.2rem;
 }
 
+.bankroll-recommendation-list {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.bankroll-recommendation-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.05rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.bankroll-recommendation-card strong {
+  font-size: 1.4rem;
+  line-height: 1.05;
+}
+
+.bankroll-recommendation-card span:last-child {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
 .table-wrap {
   overflow-x: auto;
   margin-top: 1rem;

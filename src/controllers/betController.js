@@ -7,7 +7,7 @@ const {
   parseDateInput,
   summarizeBets,
 } = require('../services/statsService');
-const { dismissAddBetTips, getOrCreateProfile } = require('../services/profileService');
+const { dismissAddBetTips } = require('../services/profileService');
 
 const STRUCTURED_BET_TYPES = new Set([
   'Spread',
@@ -395,7 +395,6 @@ async function renderAddBet(req, res) {
   };
   req.session.formData = null;
   const userId = req.session.user.id;
-  const profile = await getOrCreateProfile(userId);
   const [
     recentSports,
     recentSportsbooks,
@@ -454,7 +453,6 @@ async function renderAddBet(req, res) {
     }),
     duplicateCandidates,
     multiSportLabel: MULTI_SPORT_LABEL,
-    showAddBetTips: !profile.addBetTipsDismissed,
   });
 }
 

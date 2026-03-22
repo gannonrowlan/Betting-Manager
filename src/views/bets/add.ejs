@@ -8,7 +8,6 @@
           <h2>Enter your bet details</h2>
           <p class="muted">Everything here feeds your dashboard, history, and stats pages.</p>
         </div>
-        <button type="button" class="text-link bet-entry-tips-link" data-open-bet-tips>Entry tips</button>
       </div>
 
       <form method="POST" action="/bets/new" class="form-grid two-col bet-entry-form" data-bet-form>
@@ -227,37 +226,6 @@
     </section>
   </section>
 </section>
-
-<% if (showAddBetTips) { %>
-  <div class="bet-tips-modal-backdrop" data-bet-tips-modal>
-    <section class="card bet-tips-modal" role="dialog" aria-modal="true" aria-labelledby="bet-tips-title">
-      <div class="bet-tips-modal-header">
-        <div>
-          <p class="eyebrow">First Bet Tips</p>
-          <h2 id="bet-tips-title">A few quick things before you save.</h2>
-        </div>
-        <button type="button" class="link-btn" data-close-bet-tips aria-label="Close tips">Close</button>
-      </div>
-      <div class="bet-entry-checklist bet-tips-modal-list">
-        <div>
-          <strong>Use the exact market</strong>
-          <span>Example: Celtics -4.5, Under 146.5, Rangers ML.</span>
-        </div>
-        <div>
-          <strong>Enter the true stake</strong>
-          <span>That keeps units, profit, and bankroll trend accurate.</span>
-        </div>
-        <div>
-          <strong>Grade it honestly</strong>
-          <span>Win, loss, or push should match the actual outcome.</span>
-        </div>
-      </div>
-      <div class="bet-tips-modal-actions">
-        <button type="button" class="btn" data-dismiss-bet-tips>Got it</button>
-      </div>
-    </section>
-  </div>
-<% } %>
 
 <script>
   const betForm = document.querySelector('[data-bet-form]');
@@ -856,51 +824,5 @@
     });
   }
 
-  const betTipsModal = document.querySelector('[data-bet-tips-modal]');
-  const openBetTipsButton = document.querySelector('[data-open-bet-tips]');
-
-  const showBetTipsModal = () => {
-    if (!betTipsModal) return;
-    betTipsModal.removeAttribute('hidden');
-  };
-
-  const hideBetTipsModal = () => {
-    if (!betTipsModal) return;
-    betTipsModal.setAttribute('hidden', '');
-  };
-
-  if (openBetTipsButton) {
-    openBetTipsButton.addEventListener('click', showBetTipsModal);
-  }
-
-  if (betTipsModal) {
-    betTipsModal.querySelectorAll('[data-close-bet-tips]').forEach((button) => {
-      button.addEventListener('click', hideBetTipsModal);
-    });
-
-    const dismissButton = betTipsModal.querySelector('[data-dismiss-bet-tips]');
-    if (dismissButton) {
-      dismissButton.addEventListener('click', async () => {
-        try {
-          await fetch('/bets/new/tips-dismiss', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          });
-        } catch (error) {
-          // Keep the UX moving even if the preference fails to persist.
-        }
-
-        hideBetTipsModal();
-      });
-    }
-
-    betTipsModal.addEventListener('click', (event) => {
-      if (event.target === betTipsModal) {
-        hideBetTipsModal();
-      }
-    });
-  }
 </script>
 <%- include('../partials/footer') %>

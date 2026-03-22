@@ -9,5 +9,7 @@ router.get('/dashboard', requireAuth, pageController.renderDashboard);
 router.get('/stats', requireAuth, pageController.renderStats);
 router.get('/settings/bankroll', requireAuth, pageController.renderBankrollSettings);
 router.post('/settings/bankroll', requireAuth, pageController.updateBankrollSettings);
+router.post('/settings/bankroll/transactions', requireAuth, pageController.createBankrollAdjustment);
+router.post('/settings/bankroll/transactions/:id/delete', requireAuth, pageController.removeBankrollAdjustment);
 
 module.exports = router;

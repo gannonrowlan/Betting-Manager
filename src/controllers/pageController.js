@@ -7,7 +7,13 @@ const {
   parseDateInput,
   summarizeBets,
 } = require('../services/statsService');
-const { getOrCreateProfile, updateProfile } = require('../services/profileService');
+const {
+  createBankrollTransaction,
+  deleteBankrollTransaction,
+  getBankrollTransactions,
+  getOrCreateProfile,
+  updateProfile,
+} = require('../services/profileService');
 
 function renderLanding(req, res) {
   if (req.session.user) {
@@ -147,6 +153,100 @@ function getTrendInsights(trendSeries = []) {
   };
 }
 
+function formatCurrency(value = 0) {
+  return Number(value || 0).toFixed(2);
+}
+
+function buildBankrollTransactionSummary(transactions = []) {
+  return transactions.reduce(
+    (summary, transaction) => {
+      if (transaction.transactionType === 'deposit') {
+        summary.deposits += transaction.amount;
+      }
+
+      if (transaction.transactionType === 'withdrawal') {
+        summary.withdrawals += transaction.amount;
+      }
+
+      return summary;
+    },
+    {
+      deposits: 0,
+      withdrawals: 0,
+    }
+  );
+}
+
+function buildBankrollTimeline({ startingBankroll = 0, bets = [], transactions = [] }) {
+  const events = [
+    ...bets.map((bet) => ({
+      date: formatDateInput(new Date(bet.bet_date || bet.betDate)),
+      type: 'bet',
+      amount: Number(bet.profit_loss || bet.profitLoss || 0),
+    })),
+    ...transactions.map((transaction) => ({
+      date: formatDateInput(new Date(transaction.transactionDate)),
+      type: transaction.transactionType,
+      amount: transaction.transactionType === 'withdrawal' ? -Number(transaction.amount || 0) : Number(transaction.amount || 0),
+    })),
+  ]
+    .filter((event) => event.date)
+    .sort((left, right) => left.date.localeCompare(right.date));
+
+  let runningBankroll = Number(startingBankroll || 0);
+
+  return events.reduce((series, event) => {
+    runningBankroll += event.amount;
+
+    const point = {
+      key: event.date,
+      label: formatDashboardDate(new Date(`${event.date}T00:00:00Z`)),
+      bankroll: runningBankroll,
+      delta: event.amount,
+      type: event.type,
+    };
+
+    const previousPoint = series[series.length - 1];
+    if (previousPoint && previousPoint.key === event.date) {
+      previousPoint.bankroll = point.bankroll;
+      previousPoint.delta += event.amount;
+      return series;
+    }
+
+    series.push(point);
+    return series;
+  }, []);
+}
+
+function calculateDrawdown(trendSeries = [], startingBankroll = 0) {
+  let peak = Number(startingBankroll || 0);
+  let maxDrawdown = 0;
+
+  trendSeries.forEach((point) => {
+    peak = Math.max(peak, point.bankroll);
+    maxDrawdown = Math.max(maxDrawdown, peak - point.bankroll);
+  });
+
+  return maxDrawdown;
+}
+
+function buildUnitRecommendations({ currentBankroll = 0, profileUnitSize = 0, averageStake = 0 }) {
+  const bankroll = Math.max(Number(currentBankroll || 0), 0);
+  const profileUnit = Number(profileUnitSize || 0);
+  const avgStake = Number(averageStake || 0);
+
+  return [
+    { label: '1% Unit', amount: bankroll * 0.01, note: 'Conservative bankroll management.' },
+    { label: '2% Unit', amount: bankroll * 0.02, note: 'Balanced default for most users.' },
+    { label: '3% Unit', amount: bankroll * 0.03, note: 'Higher variance, more aggressive.' },
+    {
+      label: 'Current Unit',
+      amount: profileUnit,
+      note: avgStake && profileUnit ? `Your average stake is ${(avgStake / profileUnit).toFixed(1)}u.` : 'No average stake yet.',
+    },
+  ];
+}
+
 async function getBetLegsByBetIds(userId, betIds = []) {
   if (!betIds.length) {
     return new Map();
@@ -246,9 +346,11 @@ async function renderDashboard(req, res) {
 
   const recentBets = hydratedBets.slice(0, 5);
   const profile = await getOrCreateProfile(userId);
+  const transactions = await getBankrollTransactions(userId);
+  const transactionSummary = buildBankrollTransactionSummary(transactions);
   const stats = summarizeBets(filteredBets, profile.unitSize);
   const overallStats = summarizeBets(allBets, profile.unitSize);
-  const currentBankroll = profile.startingBankroll + overallStats.netProfit;
+  const currentBankroll = profile.startingBankroll + overallStats.netProfit + transactionSummary.deposits - transactionSummary.withdrawals;
   const bankrollRoi = profile.startingBankroll
     ? ((overallStats.netProfit / profile.startingBankroll) * 100).toFixed(1)
     : '0.0';
@@ -314,10 +416,58 @@ async function renderDashboard(req, res) {
 async function renderBankrollSettings(req, res) {
   const userId = req.session.user.id;
   const profile = await getOrCreateProfile(userId);
+  const [bets] = await pool.query(
+    'SELECT * FROM bets WHERE user_id = ? ORDER BY bet_date DESC, created_at DESC',
+    [userId]
+  );
+  const transactions = await getBankrollTransactions(userId);
+  const betSummary = summarizeBets(bets, profile.unitSize);
+  const transactionSummary = buildBankrollTransactionSummary(transactions);
+  const currentBankroll = profile.startingBankroll + betSummary.netProfit + transactionSummary.deposits - transactionSummary.withdrawals;
+  const bankrollTimeline = buildBankrollTimeline({
+    startingBankroll: profile.startingBankroll,
+    bets,
+    transactions,
+  });
+  const peakBankroll = bankrollTimeline.length
+    ? Math.max(profile.startingBankroll, ...bankrollTimeline.map((point) => point.bankroll))
+    : profile.startingBankroll;
+  const lowBankroll = bankrollTimeline.length
+    ? Math.min(profile.startingBankroll, ...bankrollTimeline.map((point) => point.bankroll))
+    : profile.startingBankroll;
+  const drawdown = calculateDrawdown(bankrollTimeline, profile.startingBankroll);
+  const unitRecommendations = buildUnitRecommendations({
+    currentBankroll,
+    profileUnitSize: profile.unitSize,
+    averageStake: betSummary.averageStake,
+  });
 
   return res.render('settings/bankroll', {
     title: 'Bankroll Settings',
     profile,
+    transactionForm: {
+      transactionType: 'deposit',
+      amount: '',
+      transactionDate: formatDateInput(new Date()),
+      notes: '',
+    },
+    transactions,
+    summary: {
+      startingBankroll: formatCurrency(profile.startingBankroll),
+      currentBankroll: formatCurrency(currentBankroll),
+      netProfit: formatCurrency(betSummary.netProfit),
+      deposits: formatCurrency(transactionSummary.deposits),
+      withdrawals: formatCurrency(transactionSummary.withdrawals),
+      peakBankroll: formatCurrency(peakBankroll),
+      lowBankroll: formatCurrency(lowBankroll),
+      drawdown: formatCurrency(drawdown),
+      averageStake: formatCurrency(betSummary.averageStake),
+    },
+    bankrollTimeline,
+    unitRecommendations: unitRecommendations.map((recommendation) => ({
+      ...recommendation,
+      amount: formatCurrency(recommendation.amount),
+    })),
   });
 }
 
@@ -342,6 +492,53 @@ async function updateBankrollSettings(req, res) {
   });
 
   req.session.messages = [{ type: 'success', text: 'Bankroll settings updated.' }];
+  return res.redirect('/settings/bankroll');
+}
+
+async function createBankrollAdjustment(req, res) {
+  const userId = req.session.user.id;
+  const transactionType = String(req.body.transactionType || '').trim();
+  const amount = Number(req.body.amount);
+  const transactionDate = String(req.body.transactionDate || '').trim();
+  const notes = String(req.body.notes || '').trim();
+
+  if (!['deposit', 'withdrawal'].includes(transactionType)) {
+    req.session.messages = [{ type: 'error', text: 'Choose deposit or withdrawal.' }];
+    return res.redirect('/settings/bankroll');
+  }
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    req.session.messages = [{ type: 'error', text: 'Enter a valid adjustment amount greater than 0.' }];
+    return res.redirect('/settings/bankroll');
+  }
+
+  if (!parseDateInput(transactionDate)) {
+    req.session.messages = [{ type: 'error', text: 'Enter a valid transaction date.' }];
+    return res.redirect('/settings/bankroll');
+  }
+
+  await createBankrollTransaction(userId, {
+    transactionType,
+    amount: amount.toFixed(2),
+    transactionDate,
+    notes,
+  });
+
+  req.session.messages = [{ type: 'success', text: 'Bankroll adjustment saved.' }];
+  return res.redirect('/settings/bankroll');
+}
+
+async function removeBankrollAdjustment(req, res) {
+  const userId = req.session.user.id;
+  const transactionId = Number(req.params.id);
+
+  if (!Number.isInteger(transactionId) || transactionId <= 0) {
+    req.session.messages = [{ type: 'error', text: 'Invalid bankroll adjustment.' }];
+    return res.redirect('/settings/bankroll');
+  }
+
+  await deleteBankrollTransaction(userId, transactionId);
+  req.session.messages = [{ type: 'success', text: 'Bankroll adjustment removed.' }];
   return res.redirect('/settings/bankroll');
 }
 
@@ -385,6 +582,8 @@ async function renderStats(req, res) {
 }
 
 module.exports = {
+  createBankrollAdjustment,
+  removeBankrollAdjustment,
   renderLanding,
   renderDashboard,
   renderStats,
