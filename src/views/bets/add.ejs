@@ -250,12 +250,21 @@
   </section>
 </section>
 
+<template
+  data-bet-form-config
+  data-known-sport-options='<%- JSON.stringify(sportOptions) %>'
+  data-known-sportsbook-options='<%- JSON.stringify(sportsbookOptions) %>'
+  data-known-bet-type-options='<%- JSON.stringify(betTypeOptions) %>'
+  data-duplicate-candidates='<%- JSON.stringify(duplicateCandidates || []) %>'
+></template>
+
 <script>
   const betForm = document.querySelector('[data-bet-form]');
-  const knownSportOptions = <%- JSON.stringify(sportOptions) %>;
-  const knownSportsbookOptions = <%- JSON.stringify(sportsbookOptions) %>;
-  const knownBetTypeOptions = <%- JSON.stringify(betTypeOptions) %>;
-  const duplicateCandidates = <%- JSON.stringify(duplicateCandidates || []) %>;
+  const betFormConfig = document.querySelector('[data-bet-form-config]');
+  const knownSportOptions = JSON.parse(betFormConfig?.dataset.knownSportOptions || '[]');
+  const knownSportsbookOptions = JSON.parse(betFormConfig?.dataset.knownSportsbookOptions || '[]');
+  const knownBetTypeOptions = JSON.parse(betFormConfig?.dataset.knownBetTypeOptions || '[]');
+  const duplicateCandidates = JSON.parse(betFormConfig?.dataset.duplicateCandidates || '[]');
   const betTypeSelect = document.querySelector('[data-bet-type-select]');
   const customBetTypeField = document.querySelector('[data-custom-bet-type-field]');
   const legCountField = document.querySelector('[data-leg-count-field]');
