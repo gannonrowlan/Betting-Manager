@@ -12,6 +12,7 @@ router.get('/stats', requireAuth, pageController.renderStats);
 router.get('/settings/account', requireAuth, csrfMiddleware.ensureCsrfToken, authController.renderAccount);
 router.post('/settings/account', requireAuth, csrfMiddleware.validateCsrfToken, authController.updateAccount);
 router.get('/settings/bankroll', requireAuth, pageController.renderBankrollSettings);
+router.get('/settings/bankroll/export.csv', requireAuth, pageController.exportBankrollTransactionsCsv);
 router.post('/settings/bankroll', requireAuth, pageController.updateBankrollSettings);
 router.post('/settings/bankroll/transactions', requireAuth, pageController.createBankrollAdjustment);
 router.post('/settings/bankroll/transactions/:id/delete', requireAuth, pageController.removeBankrollAdjustment);

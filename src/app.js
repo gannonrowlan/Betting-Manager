@@ -8,12 +8,15 @@ const { validateEnvironment } = require('./config/env');
 const authRoutes = require('./routes/authRoutes');
 const betRoutes = require('./routes/betRoutes');
 const pageRoutes = require('./routes/pageRoutes');
+const { ensureAppSchema } = require('./services/schemaService');
 const MySQLSessionStore = require('./services/MySQLSessionStore');
 
 const environment = validateEnvironment();
-const sessionStore = new MySQLSessionStore({ pool });
+const schemaReady = ensureAppSchema();
+const sessionStore = new MySQLSessionStore({ pool, ready: schemaReady, skipEnsure: true });
 
 const app = express();
+app.locals.startup = Promise.all([schemaReady, sessionStore.ready]);
 
 if (environment.trustProxy) {
   app.set('trust proxy', 1);
@@ -43,6 +46,15 @@ app.use(
   })
 );
 
+app.use(async (_req, _res, next) => {
+  try {
+    await app.locals.startup;
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get('/healthz', async (_req, res) => {
   try {
     await pool.query('SELECT 1');
@@ -54,7 +66,7 @@ app.get('/healthz', async (_req, res) => {
 
 app.get('/readyz', async (_req, res) => {
   try {
-    await sessionStore.ready;
+    await app.locals.startup;
     await pool.query('SELECT 1');
     res.status(200).json({ ok: true });
   } catch (error) {
@@ -65,6 +77,7 @@ app.get('/readyz', async (_req, res) => {
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.messages = req.session.messages || [];
+  res.locals.currentPath = req.path;
   req.session.messages = [];
   next();
 });
@@ -72,6 +85,11 @@ app.use((req, res, next) => {
 app.use('/', pageRoutes);
 app.use('/auth', authRoutes);
 app.use('/bets', betRoutes);
+
+app.use((error, _req, res, _next) => {
+  console.error(error);
+  res.status(500).render('404', { title: 'Application error' });
+});
 
 app.use((req, res) => {
   res.status(404).render('404', { title: 'Page not found' });

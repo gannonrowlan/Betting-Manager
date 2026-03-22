@@ -9,29 +9,57 @@
 <body>
   <header class="site-header">
     <div class="container nav-wrap">
-      <a href="/" class="logo">Bankroll IQ</a>
-      <nav>
+      <a href="<%= user ? '/dashboard' : '/' %>" class="logo">Bankroll IQ</a>
+      <% const isActivePath = (path, match = 'exact') => match === 'prefix' ? currentPath.startsWith(path) : currentPath === path; %>
+      <% const initials = (user?.name || '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part.charAt(0).toUpperCase())
+        .join('') || 'U'; %>
+      <% const firstName = (user?.name || '').trim().split(/\s+/)[0] || 'Account'; %>
+      <button type="button" class="nav-menu-toggle" data-nav-toggle aria-expanded="false" aria-controls="site-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+        <span class="sr-only">Toggle navigation</span>
+      </button>
+      <button type="button" class="nav-backdrop" data-nav-backdrop aria-hidden="true"></button>
+      <nav id="site-nav" data-site-nav>
         <% if (user) { %>
           <div class="nav-links-group">
-            <a href="/dashboard">Dashboard</a>
-            <a href="/bets/new">Add Bet</a>
-            <a href="/bets/history">History</a>
-            <a href="/stats">Stats</a>
-            <a href="/settings/bankroll">Bankroll</a>
+            <a href="/dashboard" class="<%= isActivePath('/dashboard') ? 'is-active' : '' %>">Dashboard</a>
+            <a href="/bets/new" class="<%= isActivePath('/bets/new') ? 'is-active' : '' %>">Add Bet</a>
+            <a href="/bets/import" class="<%= isActivePath('/bets/import') ? 'is-active' : '' %>">Import</a>
+            <a href="/bets/history" class="<%= isActivePath('/bets/history', 'prefix') ? 'is-active' : '' %>">History</a>
+            <a href="/stats" class="<%= isActivePath('/stats', 'prefix') ? 'is-active' : '' %>">Stats</a>
+            <a href="/settings/bankroll" class="<%= isActivePath('/settings/bankroll', 'prefix') ? 'is-active' : '' %>">Bankroll</a>
           </div>
           <div class="nav-actions-group">
-            <form action="/auth/logout" method="POST" class="inline-form">
-              <button type="submit" class="link-btn">Logout</button>
-            </form>
-            <a href="/settings/account" class="nav-account-link" aria-label="Account settings" title="Account settings">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M12 12a4.25 4.25 0 1 0-4.25-4.25A4.25 4.25 0 0 0 12 12Zm0 2c-4.38 0-7.5 2.13-7.5 5.07 0 .52.42.93.94.93h13.12a.93.93 0 0 0 .94-.93C19.5 16.13 16.38 14 12 14Z"></path>
-              </svg>
-            </a>
+            <details class="nav-account-menu" data-account-menu>
+              <summary class="nav-account-link <%= isActivePath('/settings/account', 'prefix') ? 'is-active' : '' %>" aria-label="Account menu">
+                <span class="nav-account-avatar" aria-hidden="true"><%= initials %></span>
+                <span class="nav-account-meta">
+                  <strong><%= firstName %></strong>
+                  <small>Account</small>
+                </span>
+                <svg class="nav-account-chevron" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                  <path d="M5.25 7.5 10 12.25 14.75 7.5"></path>
+                </svg>
+              </summary>
+              <div class="nav-account-dropdown">
+                <a href="/settings/account" class="nav-account-dropdown-link <%= isActivePath('/settings/account', 'prefix') ? 'is-active' : '' %>">Account Settings</a>
+                <form action="/auth/logout" method="POST" class="nav-account-dropdown-form">
+                  <button type="submit" class="nav-account-dropdown-link nav-account-dropdown-link-button">Logout</button>
+                </form>
+              </div>
+            </details>
           </div>
         <% } else { %>
-          <a href="/auth/login">Login</a>
-          <a href="/auth/register" class="btn btn-small">Get Started</a>
+          <div class="nav-actions-group">
+            <a href="/auth/register" class="btn btn-small">Get Started</a>
+            <a href="/auth/login" class="link-btn nav-pill">Login</a>
+          </div>
         <% } %>
       </nav>
     </div>
@@ -46,3 +74,58 @@
   <% } %>
 
   <main class="container">
+<script>
+  (() => {
+    const toggle = document.querySelector('[data-nav-toggle]');
+    const nav = document.querySelector('[data-site-nav]');
+    const backdrop = document.querySelector('[data-nav-backdrop]');
+    const accountMenu = document.querySelector('[data-account-menu]');
+
+    if (!toggle || !nav) {
+      return;
+    }
+
+    const syncNavState = (open) => {
+      nav.classList.toggle('is-open', open);
+      document.body.classList.toggle('nav-open', open);
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+
+    toggle.addEventListener('click', () => {
+      syncNavState(!nav.classList.contains('is-open'));
+    });
+
+    backdrop?.addEventListener('click', () => {
+      syncNavState(false);
+    });
+
+    nav.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 700) {
+          syncNavState(false);
+        }
+      });
+    });
+
+    document.addEventListener('click', (event) => {
+      if (accountMenu && !accountMenu.contains(event.target)) {
+        accountMenu.open = false;
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        syncNavState(false);
+        if (accountMenu) {
+          accountMenu.open = false;
+        }
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 700) {
+        syncNavState(false);
+      }
+    });
+  })();
+</script>

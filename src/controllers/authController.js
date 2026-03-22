@@ -1,21 +1,18 @@
 const bcrypt = require('bcrypt');
 const pool = require('../config/db');
 const loginRateLimitMiddleware = require('../middleware/loginRateLimitMiddleware');
+const {
+  isValidEmail,
+  isValidName,
+  validatePasswordStrength,
+} = require('../services/authService');
+const {
+  createPasswordResetToken,
+  findActivePasswordReset,
+  markPasswordResetUsed,
+} = require('../services/passwordResetService');
 
 const REMEMBER_ME_MAX_AGE = 1000 * 60 * 60 * 24 * 30;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const COMMON_PASSWORDS = new Set([
-  '1234567890',
-  '1111111111',
-  '12345678',
-  '123456789',
-  'qwerty123',
-  'password',
-  'password1',
-  'password123',
-  'letmein',
-  'admin123',
-]);
 
 function setSessionLifetime(req, rememberMe) {
   if (rememberMe) {
@@ -40,37 +37,26 @@ function regenerateSession(req) {
   });
 }
 
-function isValidName(name) {
-  return name.length >= 2 && name.length <= 80;
+function saveSession(req) {
+  return new Promise((resolve, reject) => {
+    req.session.save((error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
+    });
+  });
 }
 
-function isValidEmail(email) {
-  return EMAIL_PATTERN.test(email);
-}
-
-function passwordContainsPersonalInfo(password, name, email) {
-  const normalizedPassword = password.toLowerCase();
-  const normalizedEmail = email.toLowerCase();
-  const emailLocalPart = normalizedEmail.split('@')[0] || '';
-  const nameParts = name
-    .toLowerCase()
-    .split(/\s+/)
-    .map((part) => part.replace(/[^a-z0-9]/g, ''))
-    .filter((part) => part.length >= 3);
-
-  if (normalizedEmail && normalizedPassword.includes(normalizedEmail)) {
-    return true;
+function getAppBaseUrl(req) {
+  const configured = String(process.env.APP_BASE_URL || '').trim();
+  if (configured) {
+    return configured.replace(/\/$/, '');
   }
 
-  if (emailLocalPart.length >= 3 && normalizedPassword.includes(emailLocalPart)) {
-    return true;
-  }
-
-  return nameParts.some((part) => normalizedPassword.includes(part));
-}
-
-function isCommonPassword(password) {
-  return COMMON_PASSWORDS.has(password.toLowerCase());
+  return `${req.protocol}://${req.get('host')}`;
 }
 
 function renderRegister(req, res) {
@@ -99,6 +85,51 @@ function renderLogin(req, res) {
   return res.render('auth/login', { title: 'Login', formData });
 }
 
+function renderForgotPassword(req, res) {
+  if (req.session.user) {
+    return res.redirect('/dashboard');
+  }
+
+  const formData = req.session.passwordResetRequestFormData || {};
+  const devResetLink = req.session.devPasswordResetLink || '';
+  req.session.passwordResetRequestFormData = null;
+  req.session.devPasswordResetLink = null;
+
+  return res.render('auth/forgotPassword', {
+    title: 'Forgot Password',
+    formData,
+    devResetLink,
+  });
+}
+
+async function renderResetPassword(req, res) {
+  if (req.session.user) {
+    return res.redirect('/dashboard');
+  }
+
+  const token = String(req.query.token || '').trim();
+
+  if (!token) {
+    req.session.messages = [{ type: 'error', text: 'Password reset link is missing a token.' }];
+    return res.redirect('/auth/forgot-password');
+  }
+
+  const resetRequest = await findActivePasswordReset(token);
+  if (!resetRequest) {
+    req.session.messages = [{ type: 'error', text: 'This password reset link is invalid or has expired.' }];
+    return res.redirect('/auth/forgot-password');
+  }
+
+  const formData = req.session.passwordResetFormData || {};
+  req.session.passwordResetFormData = null;
+
+  return res.render('auth/resetPassword', {
+    title: 'Reset Password',
+    formData,
+    token,
+  });
+}
+
 function renderAccount(req, res) {
   const formData = req.session.accountFormData || {
     name: req.session.user?.name || '',
@@ -110,6 +141,46 @@ function renderAccount(req, res) {
     title: 'Account',
     formData,
   });
+}
+
+async function requestPasswordReset(req, res) {
+  const email = (req.body.email || '').trim().toLowerCase();
+  req.session.passwordResetRequestFormData = { email };
+
+  if (!email) {
+    req.session.messages = [{ type: 'error', text: 'Email is required.' }];
+    return res.redirect('/auth/forgot-password');
+  }
+
+  if (!isValidEmail(email)) {
+    req.session.messages = [{ type: 'error', text: 'Enter a valid email address.' }];
+    return res.redirect('/auth/forgot-password');
+  }
+
+  try {
+    const [users] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+
+    req.session.passwordResetRequestFormData = null;
+    req.session.devPasswordResetLink = null;
+
+    if (users.length) {
+      const resetToken = await createPasswordResetToken(users[0].id);
+
+      if (process.env.NODE_ENV !== 'production') {
+        const resetLink = `${getAppBaseUrl(req)}/auth/reset-password?token=${resetToken.plainToken}`;
+        req.session.devPasswordResetLink = resetLink;
+      }
+    }
+
+    req.session.messages = [{
+      type: 'success',
+      text: 'If that email is registered, a password reset link is now ready.',
+    }];
+    return res.redirect('/auth/forgot-password');
+  } catch (error) {
+    req.session.messages = [{ type: 'error', text: 'Unable to start a password reset right now.' }];
+    return res.redirect('/auth/forgot-password');
+  }
 }
 
 async function register(req, res) {
@@ -136,18 +207,9 @@ async function register(req, res) {
     return res.redirect('/auth/register');
   }
 
-  if (password.length < 10) {
-    req.session.messages = [{ type: 'error', text: 'Password must be at least 10 characters.' }];
-    return res.redirect('/auth/register');
-  }
-
-  if (passwordContainsPersonalInfo(password, name, email)) {
-    req.session.messages = [{ type: 'error', text: 'Password cannot include your name or email.' }];
-    return res.redirect('/auth/register');
-  }
-
-  if (isCommonPassword(password)) {
-    req.session.messages = [{ type: 'error', text: 'Choose a less common password.' }];
+  const passwordError = validatePasswordStrength(password, { name, email });
+  if (passwordError) {
+    req.session.messages = [{ type: 'error', text: passwordError }];
     return res.redirect('/auth/register');
   }
 
@@ -175,6 +237,7 @@ async function register(req, res) {
     req.session.returnTo = null;
     setSessionLifetime(req, rememberMe);
     req.session.messages = [{ type: 'success', text: 'Account created successfully.' }];
+    await saveSession(req);
     return res.redirect(returnTo || '/dashboard');
   } catch (error) {
     req.session.messages = [{ type: 'error', text: 'Unable to register at the moment.' }];
@@ -224,10 +287,63 @@ async function login(req, res) {
     req.session.returnTo = null;
     setSessionLifetime(req, rememberMe);
     req.session.messages = [{ type: 'success', text: 'Welcome back!' }];
+    await saveSession(req);
     return res.redirect(returnTo || '/dashboard');
   } catch (error) {
     req.session.messages = [{ type: 'error', text: 'Unable to log in at the moment.' }];
     return res.redirect('/auth/login');
+  }
+}
+
+async function resetPassword(req, res) {
+  const token = String(req.body.token || '').trim();
+  const password = req.body.password || '';
+  const confirmPassword = req.body.confirmPassword || '';
+
+  req.session.passwordResetFormData = { token };
+
+  if (!token) {
+    req.session.messages = [{ type: 'error', text: 'Password reset token is missing.' }];
+    return res.redirect('/auth/forgot-password');
+  }
+
+  if (!password || !confirmPassword) {
+    req.session.messages = [{ type: 'error', text: 'Enter and confirm your new password.' }];
+    return res.redirect(`/auth/reset-password?token=${encodeURIComponent(token)}`);
+  }
+
+  try {
+    const resetRequest = await findActivePasswordReset(token);
+    if (!resetRequest) {
+      req.session.messages = [{ type: 'error', text: 'This password reset link is invalid or has expired.' }];
+      return res.redirect('/auth/forgot-password');
+    }
+
+    const passwordError = validatePasswordStrength(password, {
+      name: resetRequest.name || '',
+      email: resetRequest.email || '',
+    });
+    if (passwordError) {
+      req.session.messages = [{ type: 'error', text: passwordError }];
+      return res.redirect(`/auth/reset-password?token=${encodeURIComponent(token)}`);
+    }
+
+    if (password !== confirmPassword) {
+      req.session.messages = [{ type: 'error', text: 'Passwords do not match.' }];
+      return res.redirect(`/auth/reset-password?token=${encodeURIComponent(token)}`);
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    await pool.query('UPDATE users SET password_hash = ? WHERE id = ?', [passwordHash, resetRequest.user_id]);
+    await markPasswordResetUsed(resetRequest.id);
+
+    req.session.passwordResetFormData = null;
+    req.session.messages = [{ type: 'success', text: 'Password updated. You can log in with your new password.' }];
+    await saveSession(req);
+    return res.redirect('/auth/login');
+  } catch (error) {
+    req.session.messages = [{ type: 'error', text: 'Unable to reset your password right now.' }];
+    return res.redirect(`/auth/reset-password?token=${encodeURIComponent(token)}`);
   }
 }
 
@@ -286,18 +402,9 @@ async function updateAccount(req, res) {
         return res.redirect('/settings/account');
       }
 
-      if (newPassword.length < 10) {
-        req.session.messages = [{ type: 'error', text: 'New password must be at least 10 characters.' }];
-        return res.redirect('/settings/account');
-      }
-
-      if (passwordContainsPersonalInfo(newPassword, name, email)) {
-        req.session.messages = [{ type: 'error', text: 'New password cannot include your name or email.' }];
-        return res.redirect('/settings/account');
-      }
-
-      if (isCommonPassword(newPassword)) {
-        req.session.messages = [{ type: 'error', text: 'Choose a less common password.' }];
+      const passwordError = validatePasswordStrength(newPassword, { name, email });
+      if (passwordError) {
+        req.session.messages = [{ type: 'error', text: passwordError.replace(/^Password/, 'New password') }];
         return res.redirect('/settings/account');
       }
 
@@ -323,6 +430,7 @@ async function updateAccount(req, res) {
     };
     req.session.accountFormData = null;
     req.session.messages = [{ type: 'success', text: 'Account updated successfully.' }];
+    await saveSession(req);
     return res.redirect('/settings/account');
   } catch (error) {
     req.session.messages = [{ type: 'error', text: 'Unable to update your account right now.' }];
@@ -338,10 +446,14 @@ function logout(req, res) {
 
 module.exports = {
   renderAccount,
+  renderForgotPassword,
   renderRegister,
   renderLogin,
+  renderResetPassword,
   register,
   login,
+  requestPasswordReset,
+  resetPassword,
   updateAccount,
   logout,
 };

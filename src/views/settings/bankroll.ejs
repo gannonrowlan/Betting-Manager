@@ -98,7 +98,10 @@
         <p class="bankroll-card-kicker">History</p>
         <h2>Adjustment log</h2>
       </div>
-      <span><%= transactions.length %> recorded movement<%= transactions.length === 1 ? '' : 's' %></span>
+      <div class="history-sort-actions">
+        <span><%= transactions.length %> recorded movement<%= transactions.length === 1 ? '' : 's' %></span>
+        <a href="/settings/bankroll/export.csv" class="btn btn-secondary btn-small">Export CSV</a>
+      </div>
     </div>
 
     <% if (!transactions.length) { %>

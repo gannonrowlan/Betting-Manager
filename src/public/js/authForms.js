@@ -83,6 +83,49 @@
         }
       },
     },
+    'forgot-password': {
+      messages: {
+        email: {
+          valueMissing: 'Enter your email address.',
+          typeMismatch: 'Enter a valid email address.',
+        },
+      },
+    },
+    'reset-password': {
+      messages: {
+        password: {
+          valueMissing: 'Create a new password.',
+          tooShort: 'Password must be at least 10 characters.',
+        },
+        confirmPassword: {
+          valueMissing: 'Confirm your new password.',
+        },
+      },
+      beforeValidate(input, form) {
+        if (input.name !== 'confirmPassword') {
+          input.setCustomValidity('');
+          return;
+        }
+
+        const password = form.querySelector('[name="password"]');
+        if (input.value && password && input.value !== password.value) {
+          input.setCustomValidity('Passwords do not match.');
+          return;
+        }
+
+        input.setCustomValidity('');
+      },
+      afterInput(input, form) {
+        if (input.name !== 'password') {
+          return;
+        }
+
+        const confirmPassword = form.querySelector('[name="confirmPassword"]');
+        if (confirmPassword) {
+          validateField(confirmPassword, form, formConfigs['reset-password']);
+        }
+      },
+    },
   };
 
   function passwordContainsPersonalInfo(password, name, email) {

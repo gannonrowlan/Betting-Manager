@@ -3,11 +3,12 @@ const session = require('express-session');
 const DEFAULT_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 14;
 
 class MySQLSessionStore extends session.Store {
-  constructor({ pool, tableName = 'app_sessions' }) {
+  constructor({ pool, tableName = 'app_sessions', ready = null, skipEnsure = false }) {
     super();
     this.pool = pool;
     this.tableName = tableName;
-    this.ready = this.ensureTable();
+    this.ready = Promise.resolve(ready)
+      .then(() => (skipEnsure ? undefined : this.ensureTable()));
   }
 
   async ensureTable() {

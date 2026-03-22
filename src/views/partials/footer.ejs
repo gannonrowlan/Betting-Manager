@@ -1,3 +1,33 @@
   </main>
+
+  <footer class="site-footer">
+    <div class="container site-footer-wrap">
+      <div class="site-footer-brand">
+        <a href="<%= user ? '/dashboard' : '/' %>" class="site-footer-logo">Bankroll IQ</a>
+        <p>Track bets, manage bankroll, and review performance in one clean workspace.</p>
+        <% if (user) { %>
+          <div class="site-footer-meta">
+            <span>Signed in as <strong><%= user.name %></strong></span>
+          </div>
+        <% } %>
+        <small>&copy; <%= new Date().getFullYear() %> Bankroll IQ</small>
+      </div>
+
+      <div class="site-footer-links">
+        <% if (user) { %>
+          <a href="/dashboard">Dashboard</a>
+          <a href="/bets/new">Add Bet</a>
+          <a href="/bets/history">History</a>
+          <a href="/stats">Stats</a>
+          <a href="/settings/bankroll">Bankroll</a>
+          <a href="/settings/account">Account</a>
+        <% } else { %>
+          <a href="/">Home</a>
+          <a href="/auth/login">Login</a>
+          <a href="/auth/register">Create Account</a>
+        <% } %>
+      </div>
+    </div>
+  </footer>
 </body>
 </html>

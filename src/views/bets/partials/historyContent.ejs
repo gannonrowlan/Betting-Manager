@@ -69,25 +69,33 @@
         <%= pagination.totalItems ? `Showing ${pagination.startItem}-${pagination.endItem} of ${pagination.totalItems}` : '0 rows in this view' %>
       </span>
     </div>
-    <form method="GET" action="/bets/history" class="history-sort-form" data-history-async-form>
-      <input type="hidden" name="filtersOpen" value="<%= filters.filtersOpen ? '1' : '0' %>" data-filters-open-input>
-      <input type="hidden" name="sport" value="<%= filters.sport %>">
-      <input type="hidden" name="sportsbook" value="<%= filters.sportsbook %>">
-      <input type="hidden" name="betType" value="<%= filters.betType %>">
-      <input type="hidden" name="result" value="<%= filters.result %>">
-      <input type="hidden" name="startDate" value="<%= filters.startDate %>">
-      <input type="hidden" name="endDate" value="<%= filters.endDate %>">
-      <label class="history-sort-label">
-        <span class="history-sort-kicker">Sort</span>
-        <span class="history-sort-select-wrap">
-          <select name="sort" onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
-            <% sort.options.forEach((option) => { %>
-              <option value="<%= option.value %>" <%= sort.selectedKey === option.value ? 'selected' : '' %>><%= option.label %></option>
-            <% }) %>
-          </select>
-        </span>
-      </label>
-    </form>
+    <div class="history-sort-actions">
+      <a
+        href="/bets/history/export.csv?<%= new URLSearchParams({ sport: filters.sport, sportsbook: filters.sportsbook, betType: filters.betType, result: filters.result, startDate: filters.startDate, endDate: filters.endDate, sort: sort.selectedKey }).toString() %>"
+        class="btn btn-secondary btn-small"
+      >
+        Export CSV
+      </a>
+      <form method="GET" action="/bets/history" class="history-sort-form" data-history-async-form>
+        <input type="hidden" name="filtersOpen" value="<%= filters.filtersOpen ? '1' : '0' %>" data-filters-open-input>
+        <input type="hidden" name="sport" value="<%= filters.sport %>">
+        <input type="hidden" name="sportsbook" value="<%= filters.sportsbook %>">
+        <input type="hidden" name="betType" value="<%= filters.betType %>">
+        <input type="hidden" name="result" value="<%= filters.result %>">
+        <input type="hidden" name="startDate" value="<%= filters.startDate %>">
+        <input type="hidden" name="endDate" value="<%= filters.endDate %>">
+        <label class="history-sort-label">
+          <span class="history-sort-kicker">Sort</span>
+          <span class="history-sort-select-wrap">
+            <select name="sort" onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
+              <% sort.options.forEach((option) => { %>
+                <option value="<%= option.value %>" <%= sort.selectedKey === option.value ? 'selected' : '' %>><%= option.label %></option>
+              <% }) %>
+            </select>
+          </span>
+        </label>
+      </form>
+    </div>
   </div>
 
   <div class="history-quick-filters">

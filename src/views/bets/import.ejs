@@ -1,0 +1,252 @@
+<%- include('../partials/header') %>
+<section class="history-shell">
+  <section class="card history-hero">
+    <div class="page-title-row">
+      <div>
+        <p class="eyebrow">CSV Import</p>
+        <h1>Bring spreadsheet bets into Bankroll IQ.</h1>
+        <p class="muted">Upload a CSV file or paste rows directly. Required columns: Bet Date, Sport, Bet Type, Market, Odds, Stake, and Result.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="preview-subheader">
+      <div>
+        <strong>Import bets</strong>
+        <span>Supports your Bankroll IQ export headers and spreadsheet-style names like Date, Sport, Type, Market, Odds, Stake, Result.</span>
+      </div>
+      <a href="/bets/history/export.csv" class="btn btn-secondary btn-small">Download Sample Format</a>
+    </div>
+
+    <form method="POST" action="/bets/import" class="form-grid" data-csv-import-form>
+      <label>
+        CSV file
+        <input type="file" accept=".csv,text/csv" data-csv-file-input />
+      </label>
+
+      <label>
+        CSV text
+        <textarea name="csvText" rows="14" placeholder="Bet Date,Sport,Sportsbook,Bet Type,Leg Count,Market,Odds,Stake,Result,Notes&#10;2026-03-22,NBA,FanDuel,Spread,,Lakers -4.5,-110,22,win,Late injury edge"><%= formData?.csvText || '' %></textarea>
+      </label>
+
+      <button class="btn" type="submit">Import Bets</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <div class="preview-subheader">
+      <div>
+        <strong>Preview</strong>
+        <span data-import-summary>Paste CSV text or choose a file to preview the import.</span>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <div>
+        <strong>Detected columns</strong>
+        <p class="muted" data-import-columns>No columns detected yet.</p>
+      </div>
+      <div>
+        <strong>Validation</strong>
+        <p class="muted" data-import-validation>Required columns: Bet Date, Sport, Bet Type, Market, Odds, Stake, Result.</p>
+      </div>
+    </div>
+
+    <div class="table-wrap" data-import-preview-wrap hidden>
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Bet Date</th>
+            <th>Sport</th>
+            <th>Sportsbook</th>
+            <th>Bet Type</th>
+            <th>Market</th>
+            <th>Odds</th>
+            <th>Stake</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody data-import-preview-body></tbody>
+      </table>
+    </div>
+  </section>
+</section>
+
+<script>
+  (() => {
+    const form = document.querySelector('[data-csv-import-form]');
+    const fileInput = document.querySelector('[data-csv-file-input]');
+    const textArea = form?.querySelector('textarea[name="csvText"]');
+    const summary = document.querySelector('[data-import-summary]');
+    const columns = document.querySelector('[data-import-columns]');
+    const validation = document.querySelector('[data-import-validation]');
+    const previewWrap = document.querySelector('[data-import-preview-wrap]');
+    const previewBody = document.querySelector('[data-import-preview-body]');
+
+    const headerAliases = {
+      betdate: 'betDate',
+      date: 'betDate',
+      sport: 'sport',
+      sportsbook: 'sportsbook',
+      book: 'sportsbook',
+      bettype: 'betType',
+      type: 'betType',
+      market: 'market',
+      odds: 'odds',
+      stake: 'stake',
+      result: 'result',
+    };
+    const requiredKeys = ['betDate', 'sport', 'betType', 'market', 'odds', 'stake', 'result'];
+
+    if (!form || !fileInput || !textArea || !summary || !columns || !validation || !previewWrap || !previewBody) {
+      return;
+    }
+
+    const normalizeHeader = (value) => value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    const parseCsv = (text) => {
+      const rows = [];
+      let currentRow = [];
+      let currentValue = '';
+      let inQuotes = false;
+
+      for (let index = 0; index < text.length; index += 1) {
+        const character = text[index];
+        const nextCharacter = text[index + 1];
+
+        if (character === '"') {
+          if (inQuotes && nextCharacter === '"') {
+            currentValue += '"';
+            index += 1;
+            continue;
+          }
+
+          inQuotes = !inQuotes;
+          continue;
+        }
+
+        if (character === ',' && !inQuotes) {
+          currentRow.push(currentValue);
+          currentValue = '';
+          continue;
+        }
+
+        if ((character === '\n' || character === '\r') && !inQuotes) {
+          if (character === '\r' && nextCharacter === '\n') {
+            index += 1;
+          }
+
+          currentRow.push(currentValue);
+          currentValue = '';
+
+          if (currentRow.some((value) => value !== '')) {
+            rows.push(currentRow);
+          }
+
+          currentRow = [];
+          continue;
+        }
+
+        currentValue += character;
+      }
+
+      currentRow.push(currentValue);
+      if (currentRow.some((value) => value !== '')) {
+        rows.push(currentRow);
+      }
+
+      return rows;
+    };
+
+    const buildHeaderMap = (headerRow) => headerRow.reduce((map, header, index) => {
+      const alias = headerAliases[normalizeHeader(header)];
+      if (alias && map[alias] == null) {
+        map[alias] = index;
+      }
+      return map;
+    }, {});
+
+    const escapeHtml = (value) => String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+    const renderPreview = () => {
+      const csvText = textArea.value.trim();
+
+      if (!csvText) {
+        summary.textContent = 'Paste CSV text or choose a file to preview the import.';
+        columns.textContent = 'No columns detected yet.';
+        validation.textContent = 'Required columns: Bet Date, Sport, Bet Type, Market, Odds, Stake, Result.';
+        previewBody.innerHTML = '';
+        previewWrap.hidden = true;
+        return;
+      }
+
+      const rows = parseCsv(csvText);
+      if (!rows.length) {
+        summary.textContent = 'CSV looks empty.';
+        columns.textContent = 'No columns detected yet.';
+        validation.textContent = 'Add at least a header row and one data row.';
+        previewBody.innerHTML = '';
+        previewWrap.hidden = true;
+        return;
+      }
+
+      const [headerRow, ...dataRows] = rows;
+      const headerMap = buildHeaderMap(headerRow);
+      const missingHeaders = requiredKeys.filter((key) => headerMap[key] == null);
+
+      summary.textContent = `${dataRows.length} row${dataRows.length === 1 ? '' : 's'} ready to review before import.`;
+      columns.textContent = headerRow.join(', ') || 'No columns detected yet.';
+      validation.textContent = missingHeaders.length
+        ? `Missing required columns: ${missingHeaders.join(', ')}.`
+        : 'All required columns detected.';
+
+      const previewRows = dataRows.slice(0, 5).map((row) => ({
+        betDate: row[headerMap.betDate] || '',
+        sport: row[headerMap.sport] || '',
+        sportsbook: row[headerMap.sportsbook] || '',
+        betType: row[headerMap.betType] || '',
+        market: row[headerMap.market] || '',
+        odds: row[headerMap.odds] || '',
+        stake: row[headerMap.stake] || '',
+        result: row[headerMap.result] || '',
+      }));
+
+      previewBody.innerHTML = previewRows.length
+        ? previewRows.map((row) => `
+            <tr>
+              <td>${escapeHtml(row.betDate)}</td>
+              <td>${escapeHtml(row.sport)}</td>
+              <td>${escapeHtml(row.sportsbook)}</td>
+              <td>${escapeHtml(row.betType)}</td>
+              <td>${escapeHtml(row.market)}</td>
+              <td>${escapeHtml(row.odds)}</td>
+              <td>${escapeHtml(row.stake)}</td>
+              <td>${escapeHtml(row.result)}</td>
+            </tr>
+          `).join('')
+        : '<tr><td colspan="8">No data rows detected yet.</td></tr>';
+
+      previewWrap.hidden = false;
+    };
+
+    fileInput.addEventListener('change', async () => {
+      const [file] = fileInput.files || [];
+      if (!file) {
+        return;
+      }
+
+      textArea.value = await file.text();
+      renderPreview();
+    });
+
+    textArea.addEventListener('input', renderPreview);
+    renderPreview();
+  })();
+</script>
+<%- include('../partials/footer') %>

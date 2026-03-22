@@ -4,6 +4,8 @@ const {
   summarizeBets,
 } = require('../services/statsService');
 const { dismissAddBetTips } = require('../services/profileService');
+const { buildCsv } = require('../services/csvService');
+const { parseImportRows } = require('../services/importService');
 
 const STRUCTURED_BET_TYPES = new Set([
   'Spread',
@@ -79,59 +81,6 @@ function formatDateForCsv(rawDate) {
 
 function getTodayDateInputValue() {
   return new Date().toISOString().slice(0, 10);
-}
-
-async function ensureBetTableColumns() {
-  const [legCountColumns] = await pool.query(
-    `SELECT COLUMN_NAME
-      FROM INFORMATION_SCHEMA.COLUMNS
-      WHERE TABLE_SCHEMA = DATABASE()
-        AND TABLE_NAME = 'bets'
-        AND COLUMN_NAME = 'leg_count'`
-  );
-
-  if (!legCountColumns.length) {
-    await pool.query('ALTER TABLE bets ADD COLUMN leg_count INT NULL AFTER bet_type');
-  }
-
-  const [sportsbookColumns] = await pool.query(
-    `SELECT COLUMN_NAME
-      FROM INFORMATION_SCHEMA.COLUMNS
-      WHERE TABLE_SCHEMA = DATABASE()
-        AND TABLE_NAME = 'bets'
-        AND COLUMN_NAME = 'sportsbook'`
-  );
-
-  if (!sportsbookColumns.length) {
-    await pool.query('ALTER TABLE bets ADD COLUMN sportsbook VARCHAR(120) NULL AFTER sport');
-  }
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS saved_bet_options (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL,
-      option_type ENUM('sport', 'sportsbook', 'bet_type') NOT NULL,
-      option_value VARCHAR(120) NOT NULL,
-      last_used_at TIMESTAMP NULL DEFAULT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      UNIQUE KEY uq_saved_bet_options_user_type_value (user_id, option_type, option_value),
-      CONSTRAINT fk_saved_bet_options_users FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )
-  `);
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS bet_legs (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      bet_id INT NOT NULL,
-      sport VARCHAR(80) NULL,
-      market VARCHAR(255) NOT NULL,
-      leg_order INT NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      CONSTRAINT fk_bet_legs_bets FOREIGN KEY (bet_id) REFERENCES bets(id) ON DELETE CASCADE
-    )
-  `);
 }
 
 function buildBetTypeFormData(betType = '', legCount = '') {
@@ -378,7 +327,6 @@ function validateMarketForBetType(betType, market) {
 }
 
 async function renderAddBet(req, res) {
-  await ensureBetTableColumns();
   const formData = {
     isMultiSport: false,
     legEntries: [],
@@ -449,7 +397,6 @@ async function renderAddBet(req, res) {
 
 async function createBet(req, res) {
   const userId = req.session.user.id;
-  await ensureBetTableColumns();
   const {
     sport,
     sportsbook,
@@ -722,7 +669,6 @@ function buildHistoryPagination(totalItems, currentPage, perPage) {
 
 async function renderHistory(req, res) {
   const userId = req.session.user.id;
-  await ensureBetTableColumns();
   const filters = buildHistoryFilters(req.query);
   const requestedPage = parsePositiveInteger(req.query.page, 1);
   const perPage = 25;
@@ -815,10 +761,151 @@ async function renderHistory(req, res) {
   return res.render('bets/history', viewModel);
 }
 
+async function exportHistoryCsv(req, res) {
+  const userId = req.session.user.id;
+  const filters = buildHistoryFilters(req.query);
+  const sort = buildHistorySort(filters.sort);
+
+  let whereClause = 'FROM bets WHERE user_id = ?';
+  const queryParams = [userId];
+
+  if (filters.sport) {
+    whereClause += ' AND sport = ?';
+    queryParams.push(filters.sport);
+  }
+
+  if (filters.sportsbook) {
+    whereClause += ' AND sportsbook = ?';
+    queryParams.push(filters.sportsbook);
+  }
+
+  if (filters.betType) {
+    whereClause += ' AND bet_type = ?';
+    queryParams.push(filters.betType);
+  }
+
+  if (filters.result) {
+    whereClause += ' AND result = ?';
+    queryParams.push(filters.result);
+  }
+
+  if (filters.startDate) {
+    whereClause += ' AND bet_date >= ?';
+    queryParams.push(filters.startDate);
+  }
+
+  if (filters.endDate) {
+    whereClause += ' AND bet_date <= ?';
+    queryParams.push(filters.endDate);
+  }
+
+  const [bets] = await pool.query(
+    `SELECT * ${whereClause}
+      ORDER BY ${sort.clause}`,
+    queryParams
+  );
+  const legsByBetId = await getBetLegsByBetIds(userId, bets.map((bet) => bet.id));
+  const betsWithLegs = attachLegsToBets(bets, legsByBetId);
+
+  const csv = buildCsv(
+    [
+      { key: 'betDate', header: 'Bet Date' },
+      { key: 'sport', header: 'Sport' },
+      { key: 'sportsbook', header: 'Sportsbook' },
+      { key: 'betType', header: 'Bet Type' },
+      { key: 'legCount', header: 'Leg Count' },
+      { key: 'market', header: 'Market' },
+      { key: 'odds', header: 'Odds' },
+      { key: 'stake', header: 'Stake' },
+      { key: 'result', header: 'Result' },
+      { key: 'profitLoss', header: 'Profit/Loss' },
+      { key: 'notes', header: 'Notes' },
+      { key: 'createdAt', header: 'Created At' },
+    ],
+    betsWithLegs.map((bet) => ({
+      betDate: formatDateForCsv(bet.bet_date),
+      sport: bet.sport,
+      sportsbook: bet.sportsbook || '',
+      betType: bet.bet_type,
+      legCount: bet.leg_count || '',
+      market: bet.displayMarket || bet.market || '',
+      odds: Number(bet.odds) > 0 ? `+${bet.odds}` : String(bet.odds),
+      stake: Number(bet.stake).toFixed(2),
+      result: bet.result,
+      profitLoss: Number(bet.profit_loss).toFixed(2),
+      notes: bet.notes || '',
+      createdAt: bet.created_at ? new Date(bet.created_at).toISOString() : '',
+    }))
+  );
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="bet-history-export.csv"');
+  return res.status(200).send(csv);
+}
+
+function renderImportBets(req, res) {
+  const formData = req.session.betImportFormData || {
+    csvText: '',
+  };
+  req.session.betImportFormData = null;
+
+  return res.render('bets/import', {
+    title: 'Import Bets',
+    formData,
+  });
+}
+
+async function importBets(req, res) {
+  const userId = req.session.user.id;
+  const csvText = String(req.body.csvText || '').trim();
+
+  req.session.betImportFormData = { csvText };
+
+  if (!csvText) {
+    req.session.messages = [{ type: 'error', text: 'Choose a CSV file or paste CSV text to import.' }];
+    return res.redirect('/bets/import');
+  }
+
+  const { records, errors } = parseImportRows(csvText);
+
+  if (errors.length) {
+    req.session.messages = [{ type: 'error', text: errors[0] }];
+    return res.redirect('/bets/import');
+  }
+
+  for (const record of records) {
+    await pool.query(
+      `INSERT INTO bets
+      (user_id, sport, sportsbook, bet_type, leg_count, market, odds, stake, result, profit_loss, bet_date, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        userId,
+        record.sport,
+        record.sportsbook || null,
+        record.betType,
+        record.legCount,
+        record.market,
+        record.odds,
+        record.stake,
+        record.result,
+        record.profitLoss,
+        record.betDate,
+        record.notes || null,
+      ]
+    );
+  }
+
+  req.session.betImportFormData = null;
+  req.session.messages = [{
+    type: 'success',
+    text: `${records.length} bet${records.length === 1 ? '' : 's'} imported successfully.`,
+  }];
+  return res.redirect('/bets/history');
+}
+
 async function renderEditBet(req, res) {
   const userId = req.session.user.id;
   const betId = req.params.id;
-  await ensureBetTableColumns();
 
   const [bets] = await pool.query('SELECT * FROM bets WHERE id = ? AND user_id = ?', [betId, userId]);
   if (!bets.length) {
@@ -843,7 +930,6 @@ async function renderEditBet(req, res) {
 async function updateBet(req, res) {
   const userId = req.session.user.id;
   const betId = req.params.id;
-  await ensureBetTableColumns();
   const { sport, sportsbook, betTypeChoice, customBetType, market, odds, stake, result, betDate, notes, legCount, isMultiSport, legSports, legMarkets } = req.body;
   const normalizedBetType = normalizeBetTypeInput({ betTypeChoice, customBetType });
   const parsedLegCount = legCount ? Number(legCount) : null;
@@ -994,6 +1080,9 @@ async function dismissAddBetTipsPrompt(req, res) {
 module.exports = {
   renderAddBet,
   createBet,
+  exportHistoryCsv,
+  renderImportBets,
+  importBets,
   renderHistory,
   renderEditBet,
   updateBet,

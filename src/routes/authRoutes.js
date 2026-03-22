@@ -9,6 +9,10 @@ router.get('/register', csrfMiddleware.ensureCsrfToken, authController.renderReg
 router.post('/register', csrfMiddleware.validateCsrfToken, authController.register);
 router.get('/login', csrfMiddleware.ensureCsrfToken, authController.renderLogin);
 router.post('/login', csrfMiddleware.validateCsrfToken, loginRateLimitMiddleware.loginRateLimit, authController.login);
+router.get('/forgot-password', csrfMiddleware.ensureCsrfToken, authController.renderForgotPassword);
+router.post('/forgot-password', csrfMiddleware.validateCsrfToken, authController.requestPasswordReset);
+router.get('/reset-password', csrfMiddleware.ensureCsrfToken, authController.renderResetPassword);
+router.post('/reset-password', csrfMiddleware.validateCsrfToken, authController.resetPassword);
 router.post('/logout', authController.logout);
 
 module.exports = router;

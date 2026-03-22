@@ -14,6 +14,7 @@ const {
   getOrCreateProfile,
   updateProfile,
 } = require('../services/profileService');
+const { buildCsv } = require('../services/csvService');
 
 function renderLanding(req, res) {
   if (req.session.user) {
@@ -576,6 +577,32 @@ async function removeBankrollAdjustment(req, res) {
   return res.redirect('/settings/bankroll');
 }
 
+async function exportBankrollTransactionsCsv(req, res) {
+  const userId = req.session.user.id;
+  const transactions = await getBankrollTransactions(userId);
+
+  const csv = buildCsv(
+    [
+      { key: 'transactionDate', header: 'Transaction Date' },
+      { key: 'transactionType', header: 'Type' },
+      { key: 'amount', header: 'Amount' },
+      { key: 'notes', header: 'Notes' },
+      { key: 'createdAt', header: 'Created At' },
+    ],
+    transactions.map((transaction) => ({
+      transactionDate: formatDateInput(new Date(transaction.transactionDate)),
+      transactionType: transaction.transactionType,
+      amount: Number(transaction.amount).toFixed(2),
+      notes: transaction.notes || '',
+      createdAt: transaction.createdAt ? new Date(transaction.createdAt).toISOString() : '',
+    }))
+  );
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="bankroll-adjustments-export.csv"');
+  return res.status(200).send(csv);
+}
+
 async function renderStats(req, res) {
   const userId = req.session.user.id;
   const filters = normalizeDashboardFilters(req.query);
@@ -666,6 +693,7 @@ async function renderStats(req, res) {
 
 module.exports = {
   createBankrollAdjustment,
+  exportBankrollTransactionsCsv,
   removeBankrollAdjustment,
   renderLanding,
   renderDashboard,
