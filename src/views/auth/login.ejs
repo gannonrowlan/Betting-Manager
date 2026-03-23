@@ -21,7 +21,7 @@
   </aside>
 
   <section class="card auth-card auth-card-premium">
-    <p class="eyebrow">Log In</p>
+    <p class="eyebrow">Log in</p>
     <h2>Access your dashboard</h2>
     <p class="muted auth-intro">Use your account details to continue tracking and reviewing your bets.</p>
     <form method="POST" action="/auth/login" class="form-grid auth-form" autocomplete="on" data-auth-form="login">
@@ -41,12 +41,12 @@
       </label>
       <label class="checkbox-label">
         <input type="checkbox" name="rememberMe" <%= formData?.rememberMe !== false ? 'checked' : '' %> />
-        Remember me for 30 days
+        Keep me signed in for 30 days
       </label>
       <p class="auth-switch"><a href="/auth/forgot-password">Forgot your password?</a></p>
-      <button class="btn auth-submit" type="submit" data-submit-button data-default-label="Log In" data-pending-label="Logging in...">Log In</button>
+      <button class="btn auth-submit" type="submit" data-submit-button data-default-label="Log in" data-pending-label="Logging in...">Log in</button>
     </form>
-    <p class="auth-switch">New to Bankroll IQ? <a href="/auth/register">Create an account</a>.</p>
+    <p class="auth-switch">New to Bankroll IQ? <a href="/auth/register">Create account</a>.</p>
   </section>
 </section>
 <script src="/public/js/authForms.js"></script>

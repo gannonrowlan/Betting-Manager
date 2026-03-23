@@ -16,7 +16,7 @@ async function registerAndLandOnDashboard(page, { name, email, password }) {
 }
 
 test.describe('Bankroll Flows', () => {
-  test('bankroll settings and adjustments save, render, and delete correctly', async ({ page }) => {
+  test('bankroll settings plus deposit and withdrawal adjustments save, render, and delete correctly', async ({ page }) => {
     await registerAndLandOnDashboard(page, {
       name: 'Bankroll Tester',
       email: uniqueEmail('bankroll'),
@@ -29,7 +29,7 @@ test.describe('Bankroll Flows', () => {
     await page.locator('input[name="startingBankroll"]').fill('750');
     await page.locator('input[name="unitSize"]').fill('15');
     await page.getByRole('button', { name: 'Save Bankroll Settings' }).click();
-    await expect(page.getByText('Bankroll settings updated.')).toBeVisible();
+    await expect(page).toHaveURL(/\/settings\/bankroll$/);
     await expect(page.locator('.bankroll-signal-card').filter({ hasText: 'Starting bankroll' }).locator('strong')).toHaveText('$750.00');
     await expect(page.locator('.bankroll-signal-card').filter({ hasText: 'Unit size' }).locator('strong')).toHaveText('$15.00');
 
@@ -43,8 +43,23 @@ test.describe('Bankroll Flows', () => {
     await expect(page.locator('.bankroll-log-table')).toContainText('Weekend reload');
     await expect(page.locator('.bankroll-log-table')).toContainText('+$125.50');
 
+    await page.locator('select[name="transactionType"]').selectOption('withdrawal');
+    await page.locator('input[name="amount"]').fill('40.25');
+    await page.locator('input[name="transactionDate"]').fill('2026-03-23');
+    await page.locator('input[name="notes"]').fill('Cash out');
+    await page.getByRole('button', { name: 'Save Adjustment' }).click();
+
+    await expect(page.getByText('Bankroll adjustment saved.')).toBeVisible();
+    await expect(page.locator('.bankroll-log-table')).toContainText('Cash out');
+    await expect(page.locator('.bankroll-log-table')).toContainText('-$40.25');
+    await expect(page.locator('.bankroll-signal-card').filter({ hasText: 'Current bankroll' }).locator('strong')).toHaveText('$835.25');
+
     page.once('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', { name: 'Delete' }).click();
+    await page.getByRole('row', { name: /2026-03-23.*Withdrawal.*Cash out/ }).getByRole('button', { name: 'Delete' }).click();
+    await expect(page.getByText('Bankroll adjustment removed.')).toBeVisible();
+
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('row', { name: /2026-03-22.*Deposit.*Weekend reload/ }).getByRole('button', { name: 'Delete' }).click();
     await expect(page.getByText('Bankroll adjustment removed.')).toBeVisible();
     await expect(page.getByText('No deposits or withdrawals yet. When you add one, it will appear here.')).toBeVisible();
   });

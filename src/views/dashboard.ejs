@@ -1,11 +1,15 @@
 <%- include('partials/header') %>
 <section class="dashboard-shell dashboard-shell-upgraded">
-  <section class="card dashboard-hero dashboard-hero-banner">
+  <section class="card dashboard-hero dashboard-hero-banner dashboard-hero-cinematic">
     <div class="dashboard-hero-banner-top">
       <div class="dashboard-hero-banner-copy">
         <p class="eyebrow">Performance Dashboard</p>
         <h1>Your betting command center.</h1>
-        <p class="dashboard-banner-lead">Keep the key numbers visible at all times, then rotate through focused views when you want more detail.</p>
+        <p class="dashboard-banner-lead">Net profit, ROI, bankroll, and recent form in one clear read.</p>
+        <div class="dashboard-hero-meta">
+          <span class="dashboard-hero-meta-pill"><%= filterLabel %></span>
+          <span class="dashboard-hero-meta-pill"><%= stats.totalBets %> bets in view</span>
+        </div>
       </div>
 
       <div class="dashboard-banner-actions">
@@ -14,60 +18,94 @@
       </div>
     </div>
 
-    <div class="dashboard-essentials-grid">
-      <article class="dashboard-essential-card dashboard-essential-card-primary">
-        <span class="section-label">Current window</span>
+    <div class="dashboard-command-deck">
+      <article class="dashboard-essential-card dashboard-essential-card-primary dashboard-command-centerpiece">
+        <div class="dashboard-command-topline">
+          <span class="section-label">Current window</span>
+          <span class="dashboard-command-filter"><%= filterLabel %></span>
+        </div>
+        <span class="dashboard-command-kicker">Net performance</span>
         <strong class="<%= stats.netProfit >= 0 ? 'positive' : 'negative' %>">$<%= stats.netProfit.toFixed(2) %></strong>
-        <span><%= stats.totalBets %> bets tracked in this view</span>
+        <span class="dashboard-command-summary"><%= stats.totalBets %> bets tracked in this view</span>
+        <div class="dashboard-command-mini-row">
+          <article class="dashboard-command-stat">
+            <span>Units</span>
+            <b class="dashboard-command-stat-value <%= Number(stats.units) >= 0 ? 'positive' : 'negative' %>"><%= stats.units %>u</b>
+          </article>
+          <article class="dashboard-command-stat">
+            <span>W-L-P</span>
+            <b class="dashboard-command-stat-value"><%= stats.wins %>-<%= stats.losses %>-<%= stats.pushes %></b>
+          </article>
+        </div>
       </article>
-      <article class="dashboard-essential-card">
-        <span class="section-label">ROI</span>
-        <strong class="<%= Number(stats.roi) >= 0 ? 'positive' : 'negative' %>"><%= stats.roi %>%</strong>
-        <span><%= stats.units %>u overall in this window</span>
-      </article>
-      <article class="dashboard-essential-card">
-        <span class="section-label">Record</span>
-        <strong><%= stats.wins %>-<%= stats.losses %>-<%= stats.pushes %></strong>
-        <span><%= stats.winRate %>% win rate</span>
-      </article>
-      <article class="dashboard-essential-card">
-        <span class="section-label">Bankroll</span>
-        <strong class="<%= stats.currentBankroll >= stats.startingBankroll ? 'positive' : 'negative' %>">$<%= stats.currentBankroll.toFixed(2) %></strong>
-        <span><%= stats.bankrollRoi %>% vs starting bankroll</span>
-      </article>
-      <article class="dashboard-essential-card">
-        <span class="section-label">Average Stake</span>
-        <strong>$<%= stats.averageStake.toFixed(2) %></strong>
-        <span>Unit size: $<%= stats.unitSize.toFixed(2) %></span>
-      </article>
-      <article class="dashboard-essential-card">
-        <span class="section-label">Current Streak</span>
-        <strong><%= stats.currentStreak.label %></strong>
-        <span>Recent form at a glance</span>
-      </article>
+
+      <div class="dashboard-essentials-grid">
+        <article class="dashboard-essential-card">
+          <span class="section-label">ROI</span>
+          <strong class="<%= Number(stats.roi) >= 0 ? 'positive' : 'negative' %>"><%= stats.roi %>%</strong>
+          <span><%= stats.units %>u overall</span>
+        </article>
+        <article class="dashboard-essential-card">
+          <span class="section-label">Record</span>
+          <strong><%= stats.wins %>-<%= stats.losses %>-<%= stats.pushes %></strong>
+          <span><%= stats.winRate %>% win rate</span>
+        </article>
+        <article class="dashboard-essential-card">
+          <span class="section-label">Bankroll</span>
+          <strong class="<%= stats.currentBankroll >= stats.startingBankroll ? 'positive' : 'negative' %>">$<%= stats.currentBankroll.toFixed(2) %></strong>
+          <span><%= stats.bankrollRoi %>% vs $<%= stats.startingBankroll.toFixed(2) %> start</span>
+        </article>
+        <article class="dashboard-essential-card">
+          <span class="section-label">Average Stake</span>
+          <strong>$<%= stats.averageStake.toFixed(2) %></strong>
+          <span>Unit size $<%= stats.unitSize.toFixed(2) %></span>
+        </article>
+        <article class="dashboard-essential-card">
+          <span class="section-label">Current Streak</span>
+          <strong><%= stats.currentStreak.label %></strong>
+          <span>Recent form</span>
+        </article>
+        <article class="dashboard-essential-card">
+          <span class="section-label">Total Stake</span>
+          <strong>$<%= stats.totalStake.toFixed(2) %></strong>
+          <span>Across <%= stats.totalBets %> bets</span>
+        </article>
+      </div>
     </div>
   </section>
 
-  <section class="dashboard-stage dashboard-stage-priority card" data-dashboard-stage>
+  <section class="dashboard-stage dashboard-stage-priority card" data-dashboard-stage tabindex="0">
     <div class="dashboard-stage-bar">
       <div class="dashboard-stage-bar-copy">
-        <span class="section-label">Switching Views</span>
+        <span class="section-label">View Dock</span>
         <strong>Move through the dashboard without scrolling the whole page</strong>
         <small>Currently viewing: <%= filterLabel %></small>
+        <div class="dashboard-stage-console">
+          <div class="dashboard-stage-counter" aria-live="polite">
+            <span data-stage-index>01</span>
+            <small>/ 04</small>
+          </div>
+          <div class="dashboard-stage-cue">
+            <strong data-stage-heading>Snapshot</strong>
+            <span data-stage-description>Core operating view with your bankroll pulse, window read, and strongest signals.</span>
+          </div>
+        </div>
       </div>
 
       <div class="dashboard-stage-bar-actions">
+        <span class="dashboard-stage-hotkeys">Use left and right arrows</span>
         <button type="button" class="dashboard-stage-arrow" data-stage-arrow="prev" aria-label="Previous dashboard view">Prev</button>
         <div class="dashboard-stage-nav dashboard-stage-nav-upgraded" role="tablist" aria-label="Dashboard views">
-          <button type="button" class="dashboard-stage-pill is-active" data-stage-trigger="snapshot" role="tab" aria-selected="true">Snapshot</button>
-          <button type="button" class="dashboard-stage-pill" data-stage-trigger="trend" role="tab" aria-selected="false">Trend</button>
-          <button type="button" class="dashboard-stage-pill" data-stage-trigger="recent" role="tab" aria-selected="false">Recent Bets</button>
-          <button type="button" class="dashboard-stage-pill" data-stage-trigger="insights" role="tab" aria-selected="false">Insights</button>
+          <button type="button" class="dashboard-stage-pill is-active" data-stage-trigger="snapshot" role="tab" aria-selected="true"><span class="dashboard-stage-pill-index">01</span><span>Snapshot</span></button>
+          <button type="button" class="dashboard-stage-pill" data-stage-trigger="trend" role="tab" aria-selected="false"><span class="dashboard-stage-pill-index">02</span><span>Trend</span></button>
+          <button type="button" class="dashboard-stage-pill" data-stage-trigger="recent" role="tab" aria-selected="false"><span class="dashboard-stage-pill-index">03</span><span>Recent Bets</span></button>
+          <button type="button" class="dashboard-stage-pill" data-stage-trigger="insights" role="tab" aria-selected="false"><span class="dashboard-stage-pill-index">04</span><span>Insights</span></button>
         </div>
         <button type="button" class="dashboard-stage-arrow" data-stage-arrow="next" aria-label="Next dashboard view">Next</button>
       </div>
     </div>
 
+    <div class="dashboard-stage-board" data-dashboard-stage-board>
     <section class="dashboard-stage-panel dashboard-stage-panel-snapshot hero-panel card" data-stage-panel="snapshot">
       <div class="panel-heading panel-heading-premium">
         <div class="panel-title-row">
@@ -215,7 +253,7 @@
 
     <section class="dashboard-stage-panel card dashboard-stage-panel-recent" data-stage-panel="recent" hidden>
       <div class="dashboard-panel-shell">
-        <div class="preview-subheader">
+      <div class="preview-subheader">
           <div>
             <strong>Recent bets</strong>
             <span>Latest <%= recentBets.length %> bets in this view</span>
@@ -231,7 +269,7 @@
         <% } else { %>
           <div class="dashboard-recent-list dashboard-recent-list-stage">
             <% recentBets.forEach((bet) => { %>
-              <article class="dashboard-bet-row dashboard-bet-row-stage">
+              <article class="dashboard-bet-row dashboard-bet-row-stage dashboard-bet-row-<%= bet.result %>">
                 <div class="dashboard-bet-main">
                   <strong><%= bet.sport %> - <%= bet.leg_count ? `${bet.bet_type} (${bet.leg_count} legs)` : bet.bet_type %></strong>
                   <span><%= bet.displayMarket || bet.market %></span>
@@ -310,6 +348,7 @@
         </div>
       </div>
     </section>
+    </div>
   </section>
 </section>
 
@@ -333,12 +372,39 @@
   const stageTriggers = Array.from(document.querySelectorAll('[data-stage-trigger]'));
   const stagePanels = Array.from(document.querySelectorAll('[data-stage-panel]'));
   const stageArrows = Array.from(document.querySelectorAll('[data-stage-arrow]'));
+  const stageBoard = document.querySelector('[data-dashboard-stage-board]');
+  const stageIndex = document.querySelector('[data-stage-index]');
+  const stageHeading = document.querySelector('[data-stage-heading]');
+  const stageDescription = document.querySelector('[data-stage-description]');
+  const stageMeta = {
+    snapshot: {
+      index: '01',
+      title: 'Snapshot',
+      description: 'Core operating view with your bankroll pulse, window read, and strongest signals.',
+    },
+    trend: {
+      index: '02',
+      title: 'Trend',
+      description: 'Follow the bankroll curve, inspect day swings, and change the date window without leaving the board.',
+    },
+    recent: {
+      index: '03',
+      title: 'Recent Bets',
+      description: 'Review the latest tickets in this view while the bet details, grading, and stake stay connected.',
+    },
+    insights: {
+      index: '04',
+      title: 'Insights',
+      description: 'Compare strongest and weakest categories side by side so leaks show up faster.',
+    },
+  };
   let activeStage = 'snapshot';
 
   if (stageTriggers.length && stagePanels.length) {
     const setActiveStage = (key) => {
       if (!stageOrder.includes(key)) return;
       activeStage = key;
+      const meta = stageMeta[key];
 
       stageTriggers.forEach((trigger) => {
         const isActive = trigger.dataset.stageTrigger === key;
@@ -347,8 +413,26 @@
       });
 
       stagePanels.forEach((panel) => {
-        panel.hidden = panel.dataset.stagePanel !== key;
+        const isActive = panel.dataset.stagePanel === key;
+        panel.hidden = !isActive;
+        panel.classList.toggle('is-active', isActive);
       });
+
+      if (meta) {
+        if (stageIndex) {
+          stageIndex.textContent = meta.index;
+        }
+        if (stageHeading) {
+          stageHeading.textContent = meta.title;
+        }
+        if (stageDescription) {
+          stageDescription.textContent = meta.description;
+        }
+      }
+
+      if (stageBoard) {
+        stageBoard.setAttribute('data-active-stage', key);
+      }
     };
 
     const moveStage = (direction) => {
@@ -365,6 +449,36 @@
       arrow.addEventListener('click', () => {
         moveStage(arrow.dataset.stageArrow === 'next' ? 1 : -1);
       });
+    });
+
+    stageBoard?.addEventListener('pointermove', (event) => {
+      const rect = stageBoard.getBoundingClientRect();
+      stageBoard.style.setProperty('--dashboard-spotlight-x', `${event.clientX - rect.left}px`);
+      stageBoard.style.setProperty('--dashboard-spotlight-y', `${event.clientY - rect.top}px`);
+    });
+
+    stageBoard?.addEventListener('pointerleave', () => {
+      stageBoard.style.setProperty('--dashboard-spotlight-x', '50%');
+      stageBoard.style.setProperty('--dashboard-spotlight-y', '50%');
+    });
+
+    document.addEventListener('keydown', (event) => {
+      const tagName = event.target?.tagName || '';
+      const isTypingField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName) || event.target?.isContentEditable;
+
+      if (isTypingField || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+        return;
+      }
+
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        moveStage(1);
+      }
+
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        moveStage(-1);
+      }
     });
 
     setActiveStage(activeStage);

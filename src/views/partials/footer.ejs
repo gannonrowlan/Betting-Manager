@@ -1,10 +1,13 @@
   </main>
 
-  <footer class="site-footer">
-    <div class="container site-footer-wrap">
-      <div class="site-footer-brand">
+  <% const footerIsAuthPage = !user && (currentPath || '').startsWith('/auth/'); %>
+  <footer class="site-footer <%= footerIsAuthPage ? 'site-footer-auth' : '' %>">
+    <div class="container site-footer-wrap <%= footerIsAuthPage ? 'site-footer-wrap-auth' : '' %>">
+      <div class="site-footer-brand <%= footerIsAuthPage ? 'site-footer-brand-auth' : '' %>">
         <a href="<%= user ? '/dashboard' : '/' %>" class="site-footer-logo">Bankroll IQ</a>
-        <p>Track bets, manage bankroll, and review performance in one clean workspace.</p>
+        <% if (!footerIsAuthPage) { %>
+          <p>Track bets, manage bankroll, and review performance in one clean workspace.</p>
+        <% } %>
         <% if (user) { %>
           <div class="site-footer-meta">
             <span>Signed in as <strong><%= user.name %></strong></span>
@@ -13,7 +16,7 @@
         <small>&copy; <%= new Date().getFullYear() %> Bankroll IQ</small>
       </div>
 
-      <div class="site-footer-links">
+      <div class="site-footer-links <%= footerIsAuthPage ? 'site-footer-links-auth' : '' %>">
         <% if (user) { %>
           <a href="/dashboard">Dashboard</a>
           <a href="/bets/new">Add Bet</a>
@@ -23,10 +26,14 @@
           <a href="/settings/account">Account</a>
           <a href="/privacy">Privacy</a>
           <a href="/terms">Terms</a>
+        <% } else if (footerIsAuthPage) { %>
+          <a href="/">Home</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
         <% } else { %>
           <a href="/">Home</a>
-          <a href="/auth/login">Login</a>
-          <a href="/auth/register">Create Account</a>
+          <a href="/auth/login">Log in</a>
+          <a href="/auth/register">Create account</a>
           <a href="/privacy">Privacy</a>
           <a href="/terms">Terms</a>
         <% } %>

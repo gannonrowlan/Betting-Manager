@@ -21,7 +21,7 @@
   </aside>
 
   <section class="card auth-card auth-card-premium">
-    <p class="eyebrow">Register</p>
+    <p class="eyebrow">Create account</p>
     <h2>Create your account</h2>
     <p class="muted auth-intro">A few details and you are ready to start logging bets and reviewing results.</p>
     <form method="POST" action="/auth/register" class="form-grid auth-form" autocomplete="on" data-auth-form="register">
@@ -57,7 +57,7 @@
         <input type="checkbox" name="rememberMe" <%= formData?.rememberMe !== false ? 'checked' : '' %> />
         Keep me signed in for 30 days
       </label>
-      <button class="btn auth-submit" type="submit" data-submit-button data-default-label="Create Account" data-pending-label="Creating account...">Create Account</button>
+      <button class="btn auth-submit" type="submit" data-submit-button data-default-label="Create account" data-pending-label="Creating account...">Create account</button>
     </form>
     <p class="auth-trust-note">No credit card required. Start tracking in minutes.</p>
     <p class="auth-switch">Already have an account? <a href="/auth/login">Log in</a>.</p>

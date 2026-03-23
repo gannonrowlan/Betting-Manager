@@ -11,7 +11,7 @@ async function logout(page) {
 }
 
 test.describe('Auth Flows', () => {
-  test('register validates inputs and creates an account', async ({ page }) => {
+  test('register validates inputs, logs in, and logs out cleanly', async ({ page }) => {
     const email = uniqueEmail('register');
 
     await page.goto('/auth/register');
@@ -41,9 +41,14 @@ test.describe('Auth Flows', () => {
     await page.getByRole('button', { name: 'Create Account' }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.getByText('Account created successfully.')).toBeVisible();
+
+    await logout(page);
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator('header').getByRole('link', { name: 'Get Started' })).toBeVisible();
+    await expect(page.locator('header').getByRole('link', { name: 'Login' })).toBeVisible();
   });
 
-  test('login rejects invalid credentials and accepts valid ones', async ({ page }) => {
+  test('login rejects invalid credentials, accepts valid ones, and logs out', async ({ page }) => {
     const email = uniqueEmail('login');
     const password = 'vault-ladder-2026';
 
@@ -70,6 +75,9 @@ test.describe('Auth Flows', () => {
     await page.getByRole('button', { name: 'Log In' }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.getByText('Welcome back!')).toBeVisible();
+
+    await logout(page);
+    await expect(page).toHaveURL(/\/$/);
   });
 
   test('forgot/reset password shows local reset link and accepts the new password', async ({ page }) => {

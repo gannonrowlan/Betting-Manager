@@ -20,6 +20,8 @@ test.describe('Responsive Sanity', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Track every wager with clarity.' })).toBeVisible();
+    await expect(page.locator('main').getByRole('link', { name: 'Create Free Account' }).first()).toBeVisible();
+    await expect(page.locator('main').getByText('Illustrative demo data')).toBeVisible();
 
     await page.getByRole('button', { name: 'Toggle navigation' }).click();
     const nav = page.locator('#site-nav');

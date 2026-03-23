@@ -149,11 +149,13 @@ async function requestPasswordReset(req, res) {
 
   if (!email) {
     req.session.messages = [{ type: 'error', text: 'Email is required.' }];
+    await saveSession(req);
     return res.redirect('/auth/forgot-password');
   }
 
   if (!isValidEmail(email)) {
     req.session.messages = [{ type: 'error', text: 'Enter a valid email address.' }];
+    await saveSession(req);
     return res.redirect('/auth/forgot-password');
   }
 
@@ -176,9 +178,11 @@ async function requestPasswordReset(req, res) {
       type: 'success',
       text: 'If that email is registered, a password reset link is now ready.',
     }];
+    await saveSession(req);
     return res.redirect('/auth/forgot-password');
   } catch (error) {
     req.session.messages = [{ type: 'error', text: 'Unable to start a password reset right now.' }];
+    await saveSession(req);
     return res.redirect('/auth/forgot-password');
   }
 }
@@ -254,11 +258,13 @@ async function login(req, res) {
 
   if (!email || !password) {
     req.session.messages = [{ type: 'error', text: 'Email and password are required.' }];
+    await saveSession(req);
     return res.redirect('/auth/login');
   }
 
   if (!isValidEmail(email)) {
     req.session.messages = [{ type: 'error', text: 'Enter a valid email address.' }];
+    await saveSession(req);
     return res.redirect('/auth/login');
   }
 
@@ -268,6 +274,7 @@ async function login(req, res) {
     if (!users.length) {
       loginRateLimitMiddleware.recordFailedLogin(req);
       req.session.messages = [{ type: 'error', text: 'Invalid credentials.' }];
+      await saveSession(req);
       return res.redirect('/auth/login');
     }
 
@@ -277,6 +284,7 @@ async function login(req, res) {
     if (!isMatch) {
       loginRateLimitMiddleware.recordFailedLogin(req);
       req.session.messages = [{ type: 'error', text: 'Invalid credentials.' }];
+      await saveSession(req);
       return res.redirect('/auth/login');
     }
 
@@ -291,6 +299,7 @@ async function login(req, res) {
     return res.redirect(returnTo || '/dashboard');
   } catch (error) {
     req.session.messages = [{ type: 'error', text: 'Unable to log in at the moment.' }];
+    await saveSession(req);
     return res.redirect('/auth/login');
   }
 }

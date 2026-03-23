@@ -32,6 +32,17 @@
             </div>
             <div class="form-grid two-col">
             <label>
+              <span>Bet Type</span>
+              <select name="betTypeChoice" required data-bet-type-select>
+                <option value="">Select</option>
+                <% betTypeOptions.forEach((betTypeOption) => { %>
+                  <option value="<%= betTypeOption %>" <%= formData?.betTypeChoice === betTypeOption ? 'selected' : '' %>><%= betTypeOption %></option>
+                <% }) %>
+                <option value="Other" <%= formData?.betTypeChoice === 'Other' ? 'selected' : '' %>>Other</option>
+              </select>
+              <small class="field-hint">Use a base bet type so your stats stay consistent.</small>
+            </label>
+            <label>
               <span>Sport</span>
               <input
                 type="text"
@@ -61,8 +72,8 @@
               <strong><%= multiSportLabel %></strong>
               <span class="muted">This ticket will be tracked as multi-sport because each leg can carry its own sport.</span>
             </section>
-            <label>
-              <span>Sportsbook</span>
+            <label class="bet-entry-builder-center-field">
+              <span>Sportsbook <span class="bet-entry-field-meta">Optional</span></span>
               <input
                 type="text"
                 name="sportsbook"
@@ -81,17 +92,6 @@
                 <input type="checkbox" name="saveSportsbookOption" value="1" <%= formData?.saveSportsbookOption ? 'checked' : '' %> data-save-option-checkbox="sportsbook" />
                 <span>Save this sportsbook to your list for later.</span>
               </div>
-            </label>
-            <label class="bet-entry-builder-center-field">
-              <span>Bet Type</span>
-              <select name="betTypeChoice" required data-bet-type-select>
-                <option value="">Select</option>
-                <% betTypeOptions.forEach((betTypeOption) => { %>
-                  <option value="<%= betTypeOption %>" <%= formData?.betTypeChoice === betTypeOption ? 'selected' : '' %>><%= betTypeOption %></option>
-                <% }) %>
-                <option value="Other" <%= formData?.betTypeChoice === 'Other' ? 'selected' : '' %>>Other</option>
-              </select>
-              <small class="field-hint">Use a base bet type so your stats stay consistent.</small>
             </label>
             <label class="<%= formData?.betTypeChoice === 'Other' ? '' : 'is-hidden' %>" data-custom-bet-type-field>
               <span>Custom Bet Type</span>

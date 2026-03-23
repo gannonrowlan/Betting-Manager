@@ -6,7 +6,31 @@
   <title><%= title %></title>
   <link rel="stylesheet" href="/public/css/styles.css" />
 </head>
-<body>
+<%
+  const headerCurrentPath = currentPath || '';
+  const viewIsAuthPage = !user && headerCurrentPath.startsWith('/auth/');
+  const viewIsLoginPage = headerCurrentPath === '/auth/login';
+  const viewIsRegisterPage = headerCurrentPath === '/auth/register';
+  const viewIsForgotPage = headerCurrentPath === '/auth/forgot-password';
+  const viewIsResetPage = headerCurrentPath === '/auth/reset-password';
+  const bodyClasses = [];
+  if (viewIsAuthPage) {
+    bodyClasses.push('auth-page');
+  }
+  if (viewIsLoginPage) {
+    bodyClasses.push('auth-page-login');
+  }
+  if (viewIsRegisterPage) {
+    bodyClasses.push('auth-page-register');
+  }
+  if (viewIsForgotPage) {
+    bodyClasses.push('auth-page-forgot');
+  }
+  if (viewIsResetPage) {
+    bodyClasses.push('auth-page-reset');
+  }
+%>
+<body class="<%= bodyClasses.join(' ') %>">
   <header class="site-header">
     <div class="container nav-wrap">
       <a href="<%= user ? '/dashboard' : '/' %>" class="logo">Bankroll IQ</a>
@@ -57,8 +81,17 @@
           </div>
         <% } else { %>
           <div class="nav-actions-group">
-            <a href="/auth/register" class="btn btn-small">Get Started</a>
-            <a href="/auth/login" class="link-btn nav-pill">Login</a>
+            <% if (viewIsAuthPage) { %>
+              <a
+                href="<%= viewIsLoginPage ? '/auth/register' : viewIsRegisterPage ? '/auth/login' : '/' %>"
+                class="link-btn nav-pill nav-pill-auth"
+              >
+                <%= viewIsLoginPage ? 'Create account' : viewIsRegisterPage ? 'Log in' : 'Back to Home' %>
+              </a>
+            <% } else { %>
+              <a href="/auth/register" class="btn btn-small">Get Started</a>
+              <a href="/auth/login" class="link-btn nav-pill">Log in</a>
+            <% } %>
           </div>
         <% } %>
       </nav>
