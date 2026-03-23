@@ -7,6 +7,8 @@ const csrfMiddleware = require('../middleware/csrfMiddleware');
 const router = express.Router();
 
 router.get('/', pageController.renderLanding);
+router.get('/privacy', pageController.renderPrivacyPolicy);
+router.get('/terms', pageController.renderTerms);
 router.get('/dashboard', requireAuth, pageController.renderDashboard);
 router.get('/stats', requireAuth, pageController.renderStats);
 router.get('/settings/account', requireAuth, csrfMiddleware.ensureCsrfToken, authController.renderAccount);

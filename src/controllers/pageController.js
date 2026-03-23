@@ -24,6 +24,14 @@ function renderLanding(req, res) {
   return res.render('landing', { title: 'Bankroll IQ | Sports Betting Manager' });
 }
 
+function renderPrivacyPolicy(_req, res) {
+  return res.render('legal/privacy', { title: 'Privacy Policy | Bankroll IQ' });
+}
+
+function renderTerms(_req, res) {
+  return res.render('legal/terms', { title: 'Terms of Use | Bankroll IQ' });
+}
+
 function normalizeDashboardFilters(query = {}) {
   const range = (query.range || 'all').trim();
   const preset = getDateRangePreset(range);
@@ -69,11 +77,15 @@ function filterBetsByDateRange(bets = [], filters = {}) {
       return false;
     }
 
-    if (filters.startDate && betDate < filters.startDate) {
+    const betDateKey = formatDateInput(betDate);
+    const startDateKey = filters.startDate ? formatDateInput(filters.startDate) : '';
+    const endDateKey = filters.endDate ? formatDateInput(filters.endDate) : '';
+
+    if (startDateKey && betDateKey < startDateKey) {
       return false;
     }
 
-    if (filters.endDate && betDate > filters.endDate) {
+    if (endDateKey && betDateKey > endDateKey) {
       return false;
     }
 
@@ -381,11 +393,15 @@ async function renderDashboard(req, res) {
       return false;
     }
 
-    if (filters.startDate && betDate < filters.startDate) {
+    const betDateKey = formatDateInput(betDate);
+    const startDateKey = filters.startDate ? formatDateInput(filters.startDate) : '';
+    const endDateKey = filters.endDate ? formatDateInput(filters.endDate) : '';
+
+    if (startDateKey && betDateKey < startDateKey) {
       return false;
     }
 
-    if (filters.endDate && betDate > filters.endDate) {
+    if (endDateKey && betDateKey > endDateKey) {
       return false;
     }
 
@@ -696,6 +712,8 @@ module.exports = {
   exportBankrollTransactionsCsv,
   removeBankrollAdjustment,
   renderLanding,
+  renderPrivacyPolicy,
+  renderTerms,
   renderDashboard,
   renderStats,
   renderBankrollSettings,
